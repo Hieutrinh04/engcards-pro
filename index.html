@@ -932,6 +932,7 @@
             switch (error?.code) {
                 case 'invalid_credentials': return 'Email hoặc mật khẩu không đúng.';
                 case 'email_not_confirmed': return 'Hãy xác nhận email rồi đăng nhập lại.';
+                case 'user_already_exists': return 'Email này đã có tài khoản. Hãy bấm Đăng nhập.';
                 case 'over_email_send_rate_limit':
                 case 'over_request_rate_limit': return 'Đã gửi quá nhiều yêu cầu. Hãy thử lại sau.';
                 case 'email_address_not_authorized': return 'Dịch vụ gửi email chưa hỗ trợ địa chỉ này.';
