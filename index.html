@@ -1,0 +1,2381 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EngCards Pro - Học Tiếng Anh Ngắt Quãng</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        /* 3D Flip Effects */
+        .perspective {
+            perspective: 1500px;
+        }
+        .preserve-3d {
+            transform-style: preserve-3d;
+            transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .backface-hidden {
+            backface-visibility: hidden;
+            -webkit-backface-visibility: hidden;
+        }
+        .rotate-y-180 {
+            transform: rotateY(180deg);
+        }
+        .flipped {
+            transform: rotateY(180deg);
+        }
+        /* Custom scrollbar */
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: rgba(241, 245, 249, 0.5);
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 2px;
+        }
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 min-h-screen text-slate-800 font-sans flex flex-col justify-between">
+
+    <!-- Header -->
+    <header class="bg-white border-b border-slate-200 sticky top-0 z-40 shadow-sm">
+        <div class="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between">
+            <div class="flex items-center space-x-2">
+                <div class="bg-indigo-600 text-white p-2.5 rounded-xl shadow-md shadow-indigo-100">
+                    <i data-lucide="brain-circuit" class="w-6 h-6"></i>
+                </div>
+                <div>
+                    <h1 class="text-lg font-extrabold text-slate-900 leading-tight">EngCards Pro</h1>
+                    <p class="text-xs text-slate-500 font-medium">Học Thông Minh & Lặp Lại Ngắt Quãng</p>
+                </div>
+            </div>
+            
+            <!-- Connection Status & Quick Stats -->
+            <div class="flex items-center space-x-2 sm:space-x-3 text-xs font-semibold">
+                <button type="button" id="cloud-retry-save" class="hidden rounded-lg px-2 py-1 text-rose-700 bg-rose-50">Thử lưu lại</button>
+                <button type="button" id="cloud-sign-out" class="hidden rounded-lg px-2 py-1 text-slate-600 bg-slate-100">Đăng xuất</button>
+                <!-- Sync Badge -->
+                <span id="sync-status-badge" role="status" class="flex items-center text-slate-500 bg-slate-100 px-2.5 py-1 rounded-full border border-slate-200">
+                    <span class="w-2 h-2 rounded-full bg-slate-400 mr-1.5 animate-pulse" id="sync-status-dot"></span>
+                    <span id="sync-status-text" class="hidden sm:inline">Đang kết nối...</span>
+                    <span id="sync-status-text-mobile" class="sm:hidden">Chờ...</span>
+                </span>
+                <span class="flex items-center text-indigo-600 bg-indigo-50 px-2.5 py-1 rounded-full border border-indigo-100">
+                    <i data-lucide="library" class="w-3.5 h-3.5 mr-1"></i>
+                    <span class="hidden sm:inline">Tổng:</span> <span id="total-words-count" class="ml-0.5">...</span>
+                </span>
+                <span class="flex items-center text-amber-600 bg-amber-50 px-2.5 py-1 rounded-full border border-amber-100">
+                    <i data-lucide="star" class="w-3.5 h-3.5 mr-1 fill-amber-400 stroke-amber-500"></i>
+                    <span id="star-count" class="mr-0.5">0</span>
+                </span>
+                <span class="flex items-center text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-100">
+                    <i data-lucide="trophy" class="w-3.5 h-3.5 mr-1 text-emerald-500"></i>
+                    <span id="progress-percent" class="mr-0.5">0%</span>
+                </span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Navigation Modes Bar -->
+    <nav id="app-nav" class="hidden bg-white border-b border-slate-200 shadow-sm overflow-x-auto no-scrollbar">
+        <div class="max-w-5xl mx-auto px-4 flex justify-between min-w-[500px]">
+            <button onclick="switchMode('flashcard')" id="nav-flashcard" class="flex-1 flex items-center justify-center space-x-1.5 py-3 px-2 border-b-2 border-indigo-600 text-indigo-600 font-bold text-xs sm:text-sm whitespace-nowrap transition-all">
+                <i data-lucide="layers" class="w-4 h-4"></i>
+                <span>Thẻ Flashcard</span>
+            </button>
+            <button onclick="switchMode('quiz')" id="nav-quiz" class="flex-1 flex items-center justify-center space-x-1.5 py-3 px-2 border-b-2 border-transparent text-slate-500 hover:text-indigo-600 font-semibold text-xs sm:text-sm whitespace-nowrap transition-all">
+                <i data-lucide="clipboard-check" class="w-4 h-4"></i>
+                <span>Trắc Nghiệm</span>
+            </button>
+            <button onclick="switchMode('typing')" id="nav-typing" class="flex-1 flex items-center justify-center space-x-1.5 py-3 px-2 border-b-2 border-transparent text-slate-500 hover:text-indigo-600 font-semibold text-xs sm:text-sm whitespace-nowrap transition-all">
+                <i data-lucide="pen-tool" class="w-4 h-4"></i>
+                <span>Luyện Viết Từ</span>
+            </button>
+            <button onclick="switchMode('schedule')" id="nav-schedule" class="flex-1 flex items-center justify-center space-x-1.5 py-3 px-2 border-b-2 border-transparent text-slate-500 hover:text-indigo-600 font-semibold text-xs sm:text-sm whitespace-nowrap transition-all">
+                <i data-lucide="calendar-days" class="w-4 h-4"></i>
+                <span>Lịch Trình</span>
+            </button>
+            <button onclick="switchMode('manager')" id="nav-manager" class="flex-1 flex items-center justify-center space-x-1.5 py-3 px-2 border-b-2 border-transparent text-slate-500 hover:text-indigo-600 font-semibold text-xs sm:text-sm whitespace-nowrap transition-all text-indigo-500">
+                <i data-lucide="folder-plus" class="w-4 h-4"></i>
+                <span>Quản Lý Từ</span>
+            </button>
+        </div>
+    </nav>
+
+    <!-- Main Content Grid -->
+    <main class="max-w-5xl w-full mx-auto px-4 py-6 flex-1 flex flex-col justify-start">
+        
+        <div id="cloud-loading-overlay" class="max-w-md mx-auto w-full bg-white rounded-3xl border border-slate-200 p-8 shadow-sm space-y-4 my-auto">
+            <h2 class="text-lg font-bold text-slate-900">Tài khoản EngCards Pro</h2>
+            <p id="cloud-auth-message" role="status" class="text-sm text-slate-600">Đang kết nối Supabase…</p>
+            <form id="cloud-auth-form" method="post" class="hidden space-y-3">
+                <label class="block text-sm font-semibold">Email
+                    <input name="email" type="email" autocomplete="username" required class="mt-1 block w-full rounded-xl border border-slate-300 p-2">
+                </label>
+                <label class="block text-sm font-semibold">Mật khẩu
+                    <input name="password" type="password" autocomplete="current-password" required class="mt-1 block w-full rounded-xl border border-slate-300 p-2">
+                </label>
+                <div class="flex flex-wrap gap-2">
+                    <button type="submit" value="signin" class="rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white">Đăng nhập</button>
+                    <button type="submit" value="signup" class="rounded-xl border border-indigo-200 px-4 py-2 text-sm font-semibold text-indigo-700">Đăng ký</button>
+                </div>
+            </form>
+            <button type="button" id="cloud-retry-load" class="hidden rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white">Thử kết nối lại</button>
+            <noscript>Bật JavaScript để sử dụng EngCards Pro.</noscript>
+        </div>
+
+        <!-- ---------------- MODE 1: FLASHCARD ---------------- -->
+        <div id="section-flashcard" class="space-y-6 hidden">
+            
+            <!-- DECK SELECTOR VIEW -->
+            <div id="deck-selector-view" class="max-w-md mx-auto w-full space-y-4">
+                <div class="text-center py-2">
+                    <h2 class="text-2xl font-black text-slate-900 tracking-tight flex items-center justify-center">
+                        <i data-lucide="book-open" class="w-6 h-6 text-indigo-600 mr-2"></i>
+                        Chọn Bộ Flashcard để học
+                    </h2>
+                    <p class="text-xs text-slate-500 mt-1">Chọn một bộ từ vựng bên dưới để bắt đầu học và luyện tập</p>
+                </div>
+
+                <!-- Custom stacked-looking layout -->
+                <div class="space-y-3" id="decks-list-container">
+                    <!-- Decks list generated dynamically -->
+                </div>
+            </div>
+
+            <!-- ACTIVE FLASHCARD PLAYER VIEW (HIDDEN UNTIL DECK SELECTED) -->
+            <div id="flashcard-player-view" class="hidden flex flex-col items-center justify-center">
+                <!-- Back to Decks button -->
+                <div class="w-full max-w-md flex justify-between items-center mb-4">
+                    <button onclick="backToDeckSelector()" class="text-xs font-bold text-slate-600 hover:text-indigo-600 bg-white border border-slate-200 px-3 py-1.5 rounded-xl shadow-sm flex items-center transition-colors">
+                        <i data-lucide="arrow-left" class="w-3.5 h-3.5 mr-1"></i> Quay lại các bộ
+                    </button>
+                    <!-- Current Active Deck Badge -->
+                    <span id="active-deck-title-badge" class="text-xs font-black text-indigo-700 bg-indigo-50 border border-indigo-100 px-3 py-1.5 rounded-xl">
+                        ...
+                    </span>
+                </div>
+
+                <!-- Progress Bar -->
+                <div class="w-full max-w-md mb-4">
+                    <div class="flex justify-between text-xs text-slate-500 font-medium mb-1">
+                        <span id="card-counter">Thẻ ... / ...</span>
+                        <span id="card-status-label" class="text-slate-400">Hộp 1</span>
+                    </div>
+                    <div class="w-full bg-slate-200 h-1.5 rounded-full overflow-hidden">
+                        <div id="card-progress-bar" class="bg-indigo-600 h-full transition-all duration-300" style="width: 0%;"></div>
+                    </div>
+                </div>
+
+                <!-- EMPTY STATE (Within player context) -->
+                <div id="flashcard-empty-state" class="hidden w-full max-w-md bg-white border border-slate-200 rounded-3xl p-8 text-center shadow-md space-y-4">
+                    <div class="bg-indigo-50 p-4 rounded-full w-16 h-16 flex items-center justify-center mx-auto">
+                        <i data-lucide="inbox" class="w-8 h-8 text-indigo-600"></i>
+                    </div>
+                    <h3 class="text-lg font-bold text-slate-900">Không có thẻ nào</h3>
+                    <p class="text-xs text-slate-500">Bộ học này hiện tại chưa có từ vựng nào hoặc chưa được nạp đúng cách.</p>
+                    <button onclick="backToDeckSelector()" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl text-xs transition-colors">
+                        Quay về danh sách bộ từ
+                    </button>
+                </div>
+
+                <!-- Active Flashcard player wrapper -->
+                <div id="flashcard-active-area" class="w-full max-w-md flex flex-col items-center">
+                    <!-- The Flashcard Container -->
+                    <div class="w-full aspect-[4/5] sm:aspect-[3/4] max-h-[440px] perspective cursor-pointer touch-none select-none relative group" id="card-container">
+                        <div class="w-full h-full preserve-3d relative rounded-3xl shadow-xl transition-all duration-500 border border-slate-100" id="card-flipper">
+                            <!-- FRONT OF THE CARD -->
+                            <div class="absolute inset-0 bg-gradient-to-br from-indigo-600 to-indigo-850 text-white rounded-3xl p-6 flex flex-col justify-between backface-hidden shadow-2xl">
+                                <div class="flex justify-between items-center">
+                                    <span id="card-topic-tag" class="text-[10px] sm:text-xs tracking-wider uppercase font-semibold text-indigo-200 bg-indigo-500/30 px-3 py-1 rounded-full truncate max-w-[200px]">...</span>
+                                    <div class="flex space-x-1.5">
+                                        <button onclick="event.stopPropagation(); handleQuickDeleteCard()" class="text-indigo-200 hover:text-rose-400 hover:scale-110 active:scale-95 transition-all p-2 rounded-full hover:bg-white/10" title="Xóa từ này khỏi bộ">
+                                            <i data-lucide="trash-2" class="w-5 h-5"></i>
+                                        </button>
+                                        <button id="star-btn" onclick="toggleStar(event)" class="text-white hover:scale-110 active:scale-95 transition-transform p-2 rounded-full hover:bg-white/10">
+                                            <i data-lucide="star" class="w-6 h-6 stroke-white fill-transparent transition-all" id="star-icon"></i>
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div class="text-center my-auto py-4">
+                                    <h2 id="card-word" class="text-3xl sm:text-4xl font-extrabold tracking-tight mb-2 select-text break-words px-2">...</h2>
+                                    <p id="card-pos-ipa" class="text-base font-medium text-indigo-200 select-text mb-4">
+                                        ...
+                                    </p>
+                                    <button id="speak-btn" onclick="speakWord(event)" class="bg-white/25 hover:bg-white/35 text-white p-3 rounded-full transition-colors active:scale-95 mx-auto flex items-center justify-center shadow-lg backdrop-blur-sm">
+                                        <i data-lucide="volume-2" class="w-5 h-5"></i>
+                                    </button>
+                                </div>
+
+                                <div class="text-center text-xs text-indigo-200 flex items-center justify-center space-x-1 animate-pulse">
+                                    <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i>
+                                    <span>Chạm vào thẻ để lật xem nghĩa</span>
+                                </div>
+                            </div>
+
+                            <!-- BACK OF THE CARD -->
+                            <div class="absolute inset-0 bg-white text-slate-800 rounded-3xl p-6 flex flex-col justify-between backface-hidden rotate-y-180 shadow-2xl border-2 border-indigo-50">
+                                <div class="flex justify-between items-center border-b border-slate-100 pb-3">
+                                    <span id="card-topic-tag-back" class="text-[10px] sm:text-xs tracking-wider uppercase font-bold text-indigo-600 bg-indigo-50 px-3 py-1 rounded-full truncate max-w-[200px]">...</span>
+                                    <div class="flex space-x-1.5">
+                                        <button onclick="event.stopPropagation(); handleQuickDeleteCard()" class="text-xs font-semibold text-rose-600 hover:bg-rose-50 px-2 py-1 rounded-lg transition-colors flex items-center border border-rose-100" title="Xóa từ vựng này">
+                                            <i data-lucide="trash-2" class="w-3.5 h-3.5 mr-1 text-rose-500"></i> <span class="hidden sm:inline">Xóa</span>
+                                        </button>
+                                        <button onclick="markAsLearnt(event)" id="learnt-btn" class="text-xs font-semibold text-slate-600 hover:bg-slate-100 px-2 py-1 rounded-lg transition-colors flex items-center border border-slate-200">
+                                            <i data-lucide="check" class="w-3.5 h-3.5 mr-1"></i> <span class="hidden sm:inline">Thuộc lòng</span><span class="sm:hidden">Thuộc</span>
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div class="flex-1 my-4 overflow-y-auto pr-1 custom-scrollbar space-y-4 select-text">
+                                    <div>
+                                        <span class="text-xs text-slate-400 font-semibold block uppercase tracking-wider mb-0.5">Nghĩa</span>
+                                        <h3 id="card-meaning" class="text-xl sm:text-2xl font-bold text-slate-900 leading-tight">...</h3>
+                                    </div>
+                                    
+                                    <div id="card-synonym-container" class="hidden">
+                                        <span class="text-xs text-slate-400 font-semibold block uppercase tracking-wider mb-0.5">Đồng nghĩa / Ghi chú</span>
+                                        <p id="card-synonym" class="text-sm font-medium text-slate-700 bg-slate-50 p-2 rounded-lg border border-slate-100 italic"></p>
+                                    </div>
+
+                                    <div class="space-y-3">
+                                        <span class="text-xs text-slate-400 font-semibold block uppercase tracking-wider">Ví dụ ứng dụng</span>
+                                        
+                                        <div id="eg-1" class="bg-indigo-50/40 p-3 rounded-xl border border-indigo-50">
+                                            <p id="card-eg1-en" class="text-sm font-semibold text-indigo-950 mb-1 leading-relaxed"></p>
+                                            <p id="card-eg1-vi" class="text-xs text-slate-600 leading-relaxed"></p>
+                                        </div>
+
+                                        <div id="eg-2" class="bg-slate-50 p-3 rounded-xl border border-slate-100">
+                                            <p id="card-eg2-en" class="text-sm font-semibold text-slate-900 mb-1 leading-relaxed"></p>
+                                            <p id="card-eg2-vi" class="text-xs text-slate-600 leading-relaxed"></p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="text-center text-xs text-slate-400 border-t border-slate-100 pt-3">
+                                    Chạm lại để lật lại mặt trước
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Navigation Controls -->
+                    <div class="mt-6 flex items-center justify-between w-full max-w-md px-2">
+                        <button onclick="toggleShuffle()" id="shuffle-btn" class="p-3 bg-white text-slate-500 rounded-full border border-slate-200 shadow-sm hover:bg-slate-100 transition-colors active:scale-95" title="Xáo trộn thứ tự">
+                            <i data-lucide="shuffle" class="w-5 h-5"></i>
+                        </button>
+
+                        <div class="flex items-center space-x-3">
+                            <button onclick="prevCard()" class="px-4 py-3 bg-white text-slate-700 font-semibold rounded-2xl border border-slate-200 shadow-md hover:bg-slate-50 transition-colors active:scale-95 flex items-center space-x-1">
+                                <i data-lucide="chevron-left" class="w-5 h-5"></i>
+                                <span class="hidden sm:inline text-sm">Trước</span>
+                            </button>
+                            
+                            <button onclick="flipCard()" class="px-5 py-3 bg-indigo-600 text-white font-semibold rounded-2xl shadow-lg hover:bg-indigo-700 transition-colors active:scale-95 flex items-center space-x-1.5">
+                                <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+                                <span class="text-sm">Lật</span>
+                            </button>
+
+                            <button onclick="nextCard()" class="px-4 py-3 bg-white text-slate-700 font-semibold rounded-2xl border border-slate-200 shadow-md hover:bg-slate-50 transition-colors active:scale-95 flex items-center space-x-1">
+                                <span class="hidden sm:inline text-sm">Tiếp</span>
+                                <i data-lucide="chevron-right" class="w-5 h-5"></i>
+                            </button>
+                        </div>
+
+                        <button onclick="openConfirmModal('restore')" class="p-3 bg-white text-rose-500 rounded-full border border-slate-200 shadow-sm hover:bg-rose-50 hover:border-rose-200 transition-colors active:scale-95" title="Thiết lập lại tiến trình">
+                            <i data-lucide="rotate-ccw" class="w-5 h-5"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ---------------- MODE 2: MULTIPLE CHOICE QUIZ ---------------- -->
+        <div id="section-quiz" class="hidden max-w-md mx-auto w-full space-y-6">
+            <div class="bg-white rounded-3xl border border-slate-200 p-6 shadow-sm">
+                <div class="flex justify-between items-center mb-4">
+                    <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Luyện Phản Xạ Trắc Nghiệm</span>
+                    <span class="bg-emerald-50 text-emerald-700 border border-emerald-100 text-xs px-2.5 py-1 rounded-full font-bold flex items-center">
+                        <i data-lucide="flame" class="w-3.5 h-3.5 mr-1 text-orange-500 fill-orange-500"></i>
+                        Chuỗi: <span id="quiz-streak" class="ml-1">0</span>
+                    </span>
+                </div>
+
+                <!-- Progress Header -->
+                <div class="flex justify-between items-center mb-2">
+                    <span id="quiz-counter-text" class="text-xs text-slate-500 font-medium">Câu 1/10</span>
+                    <span id="quiz-score-text" class="text-xs text-indigo-600 font-bold">Điểm: 0</span>
+                </div>
+                <div class="w-full bg-slate-100 h-1 rounded-full overflow-hidden mb-6">
+                    <div id="quiz-progress" class="bg-indigo-600 h-full transition-all duration-300" style="width: 10%;"></div>
+                </div>
+
+                <!-- Question Area -->
+                <div class="text-center mb-6">
+                    <p class="text-xs text-slate-400 font-bold uppercase tracking-wider mb-2">Chọn nghĩa đúng của từ sau:</p>
+                    <h3 id="quiz-question-word" class="text-3xl font-extrabold text-slate-900 tracking-tight">Biography</h3>
+                    <p id="quiz-question-ipa" class="text-sm text-slate-500 mt-1">/baɪˈɒɡrəfi/</p>
+                </div>
+
+                <!-- Options Grid -->
+                <div class="space-y-3" id="quiz-options-container">
+                    <!-- Dynamic button options go here -->
+                </div>
+
+                <!-- Action section (Next button) -->
+                <div class="mt-6 flex justify-between items-center hidden" id="quiz-action-bar">
+                    <div id="quiz-feedback" class="text-sm font-semibold"></div>
+                    <button onclick="nextQuizQuestion()" class="px-5 py-2.5 bg-indigo-600 text-white rounded-xl font-bold text-sm shadow-md hover:bg-indigo-700 transition-colors flex items-center space-x-1.5">
+                        <span>Tiếp theo</span>
+                        <i data-lucide="arrow-right" class="w-4 h-4"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Quiz Scoreboard / Finish Screen -->
+            <div id="quiz-result-card" class="hidden bg-gradient-to-br from-indigo-900 to-indigo-950 text-white rounded-3xl p-8 text-center shadow-xl">
+                <div class="bg-white/10 p-4 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
+                    <i data-lucide="award" class="w-8 h-8 text-amber-300"></i>
+                </div>
+                <h3 class="text-2xl font-black mb-1">Kết Thúc Lượt Chơi!</h3>
+                <p class="text-indigo-200 text-xs mb-6">Đã làm kiểm tra phản xạ 10 từ vựng ngẫu nhiên</p>
+                
+                <div class="grid grid-cols-2 gap-4 mb-6">
+                    <div class="bg-white/5 p-3 rounded-2xl border border-white/10">
+                        <span class="text-xs text-indigo-300 block">Số câu đúng</span>
+                        <span id="result-score" class="text-2xl font-black text-emerald-400">0/10</span>
+                    </div>
+                    <div class="bg-white/5 p-3 rounded-2xl border border-white/10">
+                        <span class="text-xs text-indigo-300 block">Chuỗi cao nhất</span>
+                        <span id="result-streak" class="text-2xl font-black text-amber-400">0</span>
+                    </div>
+                </div>
+
+                <div class="space-y-2">
+                    <button onclick="startQuizMode()" class="w-full py-3 bg-white text-indigo-950 font-bold rounded-2xl shadow-md hover:bg-indigo-50 transition-colors">Luyện tập lại</button>
+                    <button onclick="switchMode('flashcard')" class="w-full py-3 bg-white/10 text-white font-bold rounded-2xl hover:bg-white/20 transition-colors border border-white/10">Xem Flashcards</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ---------------- MODE 3: TYPING TEST (WRITE THE WORD) ---------------- -->
+        <div id="section-typing" class="hidden max-w-md mx-auto w-full space-y-6">
+            <div class="bg-white rounded-3xl border border-slate-200 p-6 shadow-sm">
+                <div class="flex justify-between items-center mb-4">
+                    <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Thử Thách Nhớ Mặt Chữ</span>
+                    <span class="bg-indigo-50 text-indigo-700 border border-indigo-100 text-xs px-2.5 py-1 rounded-full font-bold">Chế độ gõ từ</span>
+                </div>
+
+                <!-- Prompt area -->
+                <div class="bg-slate-50 p-4 rounded-2xl mb-5 border border-slate-100">
+                    <span class="text-[10px] text-slate-400 font-extrabold uppercase tracking-widest block mb-1">Nghĩa tiếng Việt</span>
+                    <p id="typing-meaning" class="text-lg font-bold text-slate-900 leading-snug">Cai trị, thống trị</p>
+                    <p id="typing-pos-ipa" class="text-xs text-slate-500 mt-1 italic">(v) /ruːl/</p>
+                </div>
+
+                <!-- Masked Example Sentence Challenge -->
+                <div class="mb-5 space-y-1">
+                    <span class="text-[10px] text-slate-400 font-extrabold uppercase tracking-widest block">Điền vào câu ví dụ</span>
+                    <p id="typing-example-en" class="text-sm font-semibold text-slate-800 leading-relaxed">
+                        Queen Elizabeth II <span class="bg-indigo-100 text-indigo-800 px-2 py-0.5 rounded border border-indigo-200 font-mono">????</span> the United Kingdom for 70 years.
+                    </p>
+                    <p id="typing-example-vi" class="text-xs text-slate-500 italic mt-1"></p>
+                </div>
+
+                <!-- Input area -->
+                <div class="space-y-3">
+                    <input type="text" id="typing-input" onkeydown="checkTypingEnter(event)" placeholder="Gõ từ tiếng Anh tại đây..." autocomplete="off" class="w-full px-4 py-3 border border-slate-200 rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 shadow-inner-sm text-center font-bold tracking-wide text-slate-900">
+                    
+                    <div class="flex space-x-2">
+                        <button onclick="showTypingHint()" class="flex-1 py-2 border border-slate-200 hover:bg-slate-50 text-slate-600 rounded-xl text-xs font-semibold flex items-center justify-center space-x-1 transition-all">
+                            <i data-lucide="help-circle" class="w-3.5 h-3.5 text-amber-500"></i>
+                            <span>Xem gợi ý (<span id="typing-hint-count">0</span>)</span>
+                        </button>
+                        <button onclick="checkTypingAnswer()" class="flex-1 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold flex items-center justify-center space-x-1 shadow-md transition-all">
+                            <i data-lucide="check" class="w-3.5 h-3.5"></i>
+                            <span>Kiểm tra</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Feedback Area -->
+                <div id="typing-feedback-box" class="mt-4 p-3 rounded-xl hidden text-center text-sm font-bold animate-pulse"></div>
+
+                <!-- Next Control -->
+                <button onclick="nextTypingQuestion()" id="typing-next-btn" class="w-full mt-4 py-2.5 bg-slate-900 text-white rounded-xl text-xs font-bold flex items-center justify-center space-x-1 hover:bg-slate-800 transition-all hidden">
+                    <span>Từ tiếp theo</span>
+                    <i data-lucide="chevron-right" class="w-4 h-4"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- ---------------- MODE 4: SPACED REPETITION SCHEDULE ---------------- -->
+        <div id="section-schedule" class="hidden space-y-6">
+            
+            <!-- Intro Card to Forget Curve -->
+            <div class="bg-gradient-to-r from-slate-900 to-indigo-950 text-white p-6 rounded-3xl shadow-lg relative overflow-hidden">
+                <div class="absolute right-0 top-0 opacity-10 transform translate-x-4 -translate-y-4">
+                    <i data-lucide="calendar" class="w-48 h-48"></i>
+                </div>
+                <div class="relative z-10 space-y-2">
+                    <span class="text-[10px] font-black uppercase tracking-widest text-indigo-300 bg-indigo-500/30 px-3 py-1 rounded-full">Lịch Trình Spaced Repetition</span>
+                    <h2 class="text-xl sm:text-2xl font-black">Hệ Thống Ôn Tập 5 Hộp Leitner</h2>
+                    <p class="text-xs text-indigo-200 leading-relaxed max-w-2xl">
+                        Theo Hermann Ebbinghaus, chúng ta quên <span class="text-amber-400 font-bold">50% kiến thức</span> trong vòng 1 ngày nếu không ôn tập. 
+                        Phương pháp **Leitner System** chia từ vựng thành 5 hộp. Trả lời đúng từ sẽ thăng cấp sang hộp tiếp theo với chu kỳ ôn lâu hơn, giúp ghi nhớ vĩnh viễn. 
+                        <strong class="text-emerald-400">💡 Mới: Click vào các Hộp dưới đây để ôn tập nhanh những từ thuộc hộp đó!</strong>
+                    </p>
+                </div>
+            </div>
+
+            <!-- Leitner Boxes Visual Grid -->
+            <div class="grid grid-cols-2 md:grid-cols-5 gap-3">
+                <!-- Box 1 -->
+                <div onclick="reviewLeitnerBox(1)" class="bg-white border-2 border-slate-100 rounded-2xl p-4 flex flex-col justify-between items-center text-center shadow-sm hover:shadow-md hover:scale-[1.03] hover:border-red-300 active:scale-[0.98] transition-all cursor-pointer relative overflow-hidden">
+                    <div class="absolute top-0 inset-x-0 h-1 bg-red-500"></div>
+                    <span class="text-2xl mb-1">📦</span>
+                    <span class="text-xs font-bold text-slate-800">Hộp 1 (Mới học)</span>
+                    <span class="text-[10px] text-slate-400 mt-0.5">Ôn tập hằng ngày</span>
+                    <span id="leitner-count-1" class="text-xl font-black text-red-500 mt-2">0</span>
+                </div>
+                <!-- Box 2 -->
+                <div onclick="reviewLeitnerBox(2)" class="bg-white border-2 border-slate-100 rounded-2xl p-4 flex flex-col justify-between items-center text-center shadow-sm hover:shadow-md hover:scale-[1.03] hover:border-orange-300 active:scale-[0.98] transition-all cursor-pointer relative overflow-hidden">
+                    <div class="absolute top-0 inset-x-0 h-1 bg-orange-400"></div>
+                    <span class="text-2xl mb-1">📦</span>
+                    <span class="text-xs font-bold text-slate-800">Hộp 2</span>
+                    <span class="text-[10px] text-slate-400 mt-0.5">Ôn cách 2 ngày</span>
+                    <span id="leitner-count-2" class="text-xl font-black text-orange-400 mt-2">0</span>
+                </div>
+                <!-- Box 3 -->
+                <div onclick="reviewLeitnerBox(3)" class="bg-white border-2 border-slate-100 rounded-2xl p-4 flex flex-col justify-between items-center text-center shadow-sm hover:shadow-md hover:scale-[1.03] hover:border-yellow-300 active:scale-[0.98] transition-all cursor-pointer relative overflow-hidden">
+                    <div class="absolute top-0 inset-x-0 h-1 bg-yellow-400"></div>
+                    <span class="text-2xl mb-1">📦</span>
+                    <span class="text-xs font-bold text-slate-800">Hộp 3</span>
+                    <span class="text-[10px] text-slate-400 mt-0.5">Ôn cách 4 ngày</span>
+                    <span id="leitner-count-3" class="text-xl font-black text-yellow-500 mt-2">0</span>
+                </div>
+                <!-- Box 4 -->
+                <div onclick="reviewLeitnerBox(4)" class="bg-white border-2 border-slate-100 rounded-2xl p-4 flex flex-col justify-between items-center text-center shadow-sm hover:shadow-md hover:scale-[1.03] hover:border-indigo-300 active:scale-[0.98] transition-all cursor-pointer relative overflow-hidden">
+                    <div class="absolute top-0 inset-x-0 h-1 bg-indigo-500"></div>
+                    <span class="text-2xl mb-1">📦</span>
+                    <span class="text-xs font-bold text-slate-800">Hộp 4</span>
+                    <span class="text-[10px] text-slate-400 mt-0.5">Ôn cách 7 ngày</span>
+                    <span id="leitner-count-4" class="text-xl font-black text-indigo-500 mt-2">0</span>
+                </div>
+                <!-- Box 5 -->
+                <div onclick="reviewLeitnerBox(5)" class="bg-white border-2 border-slate-100 rounded-2xl p-4 flex flex-col justify-between items-center text-center shadow-sm hover:shadow-md hover:scale-[1.03] hover:border-emerald-300 active:scale-[0.98] transition-all cursor-pointer relative overflow-hidden">
+                    <div class="absolute top-0 inset-x-0 h-1 bg-emerald-500"></div>
+                    <span class="text-2xl mb-1">🏆</span>
+                    <span class="text-xs font-bold text-slate-800">Hộp 5 (Thành thạo)</span>
+                    <span class="text-[10px] text-slate-400 mt-0.5">Ôn cách 15 ngày</span>
+                    <span id="leitner-count-5" class="text-xl font-black text-emerald-500 mt-2">0</span>
+                </div>
+            </div>
+
+            <!-- Intelligent Review Scheduler Helper -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <!-- Today review list -->
+                <div class="bg-white rounded-3xl p-5 border border-slate-200 shadow-sm md:col-span-2 space-y-4">
+                    <h3 class="text-base font-extrabold text-slate-900 flex items-center">
+                        <i data-lucide="check-square" class="w-5 h-5 text-indigo-600 mr-1.5"></i>
+                        Hôm nay bạn cần ôn tập từ nào?
+                    </h3>
+                    
+                    <p class="text-xs text-slate-500">
+                        Hệ thống dựa trên thời gian thực và xếp hạng Hộp Leitner để hiển thị các từ đã đến hạn ôn tập ngày hôm nay.
+                    </p>
+
+                    <!-- Filter helper for scheduled words -->
+                    <div id="scheduled-word-box" class="space-y-2 max-h-60 overflow-y-auto custom-scrollbar">
+                        <!-- Dynamic list of words scheduled for today -->
+                    </div>
+                </div>
+
+                <!-- Spaced Repetition Calendar -->
+                <div class="bg-white rounded-3xl p-5 border border-slate-200 shadow-sm space-y-4">
+                    <h3 class="text-base font-extrabold text-slate-900 flex items-center">
+                        <i data-lucide="calendar" class="w-5 h-5 text-indigo-600 mr-1.5"></i>
+                        Lịch Ôn Khoa Học
+                    </h3>
+                    <div class="space-y-3.5 text-xs text-slate-600">
+                        <div class="flex items-start space-x-2.5">
+                            <span class="bg-red-100 text-red-700 px-2 py-0.5 rounded font-bold whitespace-nowrap">1 ngày</span>
+                            <p>Ôn tập các từ ở **Hộp 1** (vừa học hoặc trả lời sai).</p>
+                        </div>
+                        <div class="flex items-start space-x-2.5">
+                            <span class="bg-orange-100 text-orange-700 px-2 py-0.5 rounded font-bold whitespace-nowrap">2 ngày</span>
+                            <p>Kiểm tra các từ ở **Hộp 2** để ghi nhớ sâu.</p>
+                        </div>
+                        <div class="flex items-start space-x-2.5">
+                            <span class="bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded font-bold whitespace-nowrap">4 ngày</span>
+                            <p>Hệ thống gợi ý lặp lại từ ở **Hộp 3**.</p>
+                        </div>
+                        <div class="flex items-start space-x-2.5">
+                            <span class="bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded font-bold whitespace-nowrap">7 ngày</span>
+                            <p>Ôn tập từ **Hộp 4** để đẩy vào vùng trí nhớ dài hạn.</p>
+                        </div>
+                        <div class="flex items-start space-x-2.5">
+                            <span class="bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded font-bold whitespace-nowrap">15 ngày</span>
+                            <p>Kiểm tra **Hộp 5** để hoàn thành ghi nhớ vĩnh viễn.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- ---------------- MODE 5: CUSTOM WORD MANAGER ---------------- -->
+        <div id="section-manager" class="hidden space-y-6">
+            <!-- BULK IMPORT ZONE (Tải hàng loạt từ vựng không giới hạn) -->
+            <div class="bg-white rounded-3xl p-5 border border-slate-200 shadow-sm space-y-4">
+                <div class="flex items-center space-x-2">
+                    <div class="bg-emerald-50 text-emerald-700 p-2 rounded-xl border border-emerald-100">
+                        <i data-lucide="file-text" class="w-5 h-5"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-lg font-black text-slate-900 leading-tight">Nhập Từ Vựng Hàng Loạt (Không Giới Hạn)</h3>
+                        <p class="text-xs text-slate-500">Dán danh sách từ của bạn để tự động tạo một bộ Flashcard hoàn toàn mới cực nhanh.</p>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div class="md:col-span-2 space-y-3">
+                        <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider">Đặt tên cho Bộ Từ Mới *</label>
+                        <input type="text" id="bulk-deck-name" placeholder="Ví dụ: Bộ từ vựng IELTS, English B1, Từ vựng chuyên ngành..." class="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:outline-none bg-slate-50/50 font-semibold text-slate-900">
+                        
+                        <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mt-2">Dán danh sách từ vựng theo cú pháp phân tách *</label>
+                        <textarea id="bulk-import-area" rows="8" placeholder="Cú pháp: Từ tiếng Anh | Phiên âm IPA | Nghĩa tiếng Việt | Loại từ | Ví dụ Anh | Ví dụ Việt&#10;&#10;Mỗi từ 1 dòng. Ví dụ:&#10;Incredible | /ɪnˈkredəbl/ | Không thể tin được, tuyệt vời | adj | The view was incredible. | Quang cảnh thật tuyệt vời.&#10;Evaluate | /ɪˈvæljueɪt/ | Đánh giá, định giá | v&#10;Fascinating | /ˈfæsɪneɪtɪŋ/ | Quyến rũ, hấp dẫn | adj | A fascinating story | Một câu chuyện hấp dẫn" class="w-full p-3 border border-slate-200 rounded-xl text-xs font-mono focus:outline-none focus:ring-2 focus:ring-emerald-500 bg-slate-50/50 custom-scrollbar"></textarea>
+                    </div>
+
+                    <!-- Instructions and Helper -->
+                    <div class="bg-slate-50 p-4 rounded-2xl border border-slate-100 flex flex-col justify-between text-xs space-y-4">
+                        <div class="space-y-3">
+                            <span class="font-bold text-slate-700 block uppercase tracking-wider text-[10px]">💡 Hướng dẫn định dạng:</span>
+                            <p class="text-slate-500 leading-relaxed text-[11px]">
+                                Sử dụng ký tự gạch đứng <strong class="text-indigo-600 font-bold">|</strong> để ngăn cách các trường thông tin. Cú pháp tối giản nhất chỉ cần từ và nghĩa:
+                            </p>
+                            <div class="bg-white p-2 rounded-lg border border-slate-200 font-mono text-[9px] text-slate-600 whitespace-pre-line">Từ tiếng Anh | Nghĩa tiếng Việt</div>
+                            <p class="text-slate-500 leading-relaxed text-[11px] mt-2">
+                                Nếu không nhập Loại từ (n, v, adj...) hệ thống sẽ tự động gán mặc định là <strong>"n"</strong> (Danh từ).
+                            </p>
+                            <p class="text-slate-500 leading-relaxed text-[11px]">
+                                Không giới hạn số lượng từ nạp vào mỗi lần.
+                            </p>
+                        </div>
+                        
+                        <button onclick="handleBulkImport(event)" class="w-full py-3 bg-emerald-600 text-white font-bold rounded-xl shadow-md hover:bg-emerald-700 transition-all flex items-center justify-center space-x-1.5">
+                            <i data-lucide="file-plus-2" class="w-4 h-4"></i>
+                            <span>Tạo Bộ Thẻ Hàng Loạt</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Single Word Form Manager & JSON Tools Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <!-- Word list creator -->
+                <div class="bg-white rounded-3xl p-5 border border-slate-200 shadow-sm md:col-span-2 space-y-4">
+                    <h3 class="text-lg font-extrabold text-slate-900 flex items-center">
+                        <i data-lucide="plus-circle" class="w-5 h-5 text-indigo-600 mr-1.5"></i>
+                        Thêm Một Từ Đơn Lẻ
+                    </h3>
+                    
+                    <form id="add-word-form" onsubmit="handleAddNewWord(event)" class="space-y-4 text-sm">
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-xs font-bold text-slate-500 mb-1 uppercase">Từ tiếng Anh *</label>
+                                <input type="text" id="new-word" required placeholder="Ví dụ: Destination" class="w-full px-3.5 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none bg-slate-50/50 font-semibold text-slate-900">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-slate-500 mb-1 uppercase">Nghĩa tiếng Việt *</label>
+                                <input type="text" id="new-vi" required placeholder="Ví dụ: Điểm đến" class="w-full px-3.5 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none bg-slate-50/50 font-semibold text-slate-900">
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                            <div>
+                                <label class="block text-xs font-bold text-slate-500 mb-1 uppercase">Từ loại *</label>
+                                <select id="new-pos" required class="w-full px-3 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none bg-white font-medium">
+                                    <option value="n">Noun (Danh từ)</option>
+                                    <option value="v">Verb (Động từ)</option>
+                                    <option value="adj">Adj (Tính từ)</option>
+                                    <option value="adv">Adv (Trạng từ)</option>
+                                    <option value="phrase">Phrase (Cụm từ)</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-slate-500 mb-1 uppercase">Phiên âm IPA</label>
+                                <input type="text" id="new-ipa" placeholder="Ví dụ: /ˌdestɪˈneɪʃn/" class="w-full px-3.5 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none bg-slate-50/50 text-slate-800">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-slate-500 mb-1 uppercase">Chọn Bộ học *</label>
+                                <select id="new-category-select" onchange="toggleNewCategoryInput()" required class="w-full px-3 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none bg-white font-semibold text-slate-900">
+                                    <!-- Populated dynamically via JS -->
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Hidden by default, shown when user selects "Tạo bộ mới" -->
+                        <div id="new-category-name-container" class="hidden bg-indigo-50/30 p-3 rounded-xl border border-indigo-100">
+                            <label class="block text-xs font-bold text-indigo-700 mb-1 uppercase">Nhập tên Bộ học mới của bạn *</label>
+                            <input type="text" id="new-category-name" placeholder="Ví dụ: Bộ 2, Bộ 3, Bộ 4,..." class="w-full px-3.5 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none bg-white">
+                        </div>
+
+                        <div class="space-y-2">
+                            <label class="block text-xs font-bold text-slate-500 uppercase">Câu ví dụ tiếng Anh + dịch Việt</label>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                <input type="text" id="new-eg1-en" placeholder="Ví dụ tiếng Anh 1..." class="w-full px-3.5 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none bg-slate-50/50">
+                                <input type="text" id="new-eg1-vi" placeholder="Bản dịch tiếng Việt 1..." class="w-full px-3.5 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none bg-slate-50/50">
+                            </div>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                <input type="text" id="new-eg2-en" placeholder="Ví dụ tiếng Anh 2..." class="w-full px-3.5 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none bg-slate-50/50">
+                                <input type="text" id="new-eg2-vi" placeholder="Bản dịch tiếng Việt 2..." class="w-full px-3.5 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:outline-none bg-slate-50/50">
+                            </div>
+                        </div>
+
+                        <button type="submit" class="w-full py-3 bg-indigo-600 text-white font-bold rounded-2xl shadow-md hover:bg-indigo-700 transition-all flex items-center justify-center space-x-1.5">
+                            <i data-lucide="plus" class="w-4 h-4"></i>
+                            <span>Thêm Từ Vào Bộ Nhớ Thẻ</span>
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Backup and Bulk Load -->
+                <div class="bg-white rounded-3xl p-5 border border-slate-200 shadow-sm space-y-4">
+                    <h3 class="text-base font-extrabold text-slate-900 flex items-center">
+                        <i data-lucide="download-cloud" class="w-5 h-5 text-indigo-600 mr-1.5"></i>
+                        Nhập/Xuất Dữ Liệu
+                    </h3>
+                    <p class="text-xs text-slate-500">Bạn muốn lưu giữ bộ từ vựng cá nhân, hoặc chia sẻ cho bạn bè? Bạn có thể sao chép dữ liệu dạng văn bản JSON tại đây.</p>
+                    
+                    <div class="space-y-2">
+                        <textarea id="json-io-area" rows="6" placeholder="Dán mã JSON bộ từ vựng mới vào đây để tải..." class="w-full p-2.5 border border-slate-200 rounded-xl text-xs font-mono focus:outline-none focus:ring-1 focus:ring-indigo-500 bg-slate-50"></textarea>
+                        
+                        <div class="flex gap-2 text-xs">
+                            <button onclick="exportVocabularyJSON()" class="flex-1 py-2 border border-indigo-200 text-indigo-700 rounded-xl font-bold hover:bg-indigo-50 flex items-center justify-center">
+                                <i data-lucide="copy" class="w-3.5 h-3.5 mr-1"></i> Sao chép JSON
+                            </button>
+                            <button onclick="importVocabularyJSON()" class="flex-1 py-2 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-700 flex items-center justify-center shadow-sm">
+                                <i data-lucide="upload" class="w-3.5 h-3.5 mr-1"></i> Nạp dữ liệu
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="border-t border-slate-100 pt-4 space-y-2">
+                        <h4 class="text-xs font-bold text-slate-700">Khôi phục bộ từ gốc:</h4>
+                        <button onclick="openConfirmModal('restore')" class="w-full py-2 bg-slate-100 hover:bg-rose-50 hover:text-rose-600 text-slate-600 font-semibold rounded-xl text-xs transition-colors flex items-center justify-center">
+                            <i data-lucide="refresh-cw" class="w-3.5 h-3.5 mr-1"></i> Khôi phục từ vựng gốc
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Footer of the page -->
+    <footer class="bg-white border-t border-slate-200 py-4 mt-auto">
+        <div class="max-w-5xl mx-auto px-4 text-center text-[11px] text-slate-400 leading-relaxed">
+            Ứng dụng tự học flashcard • Vuốt hoặc dùng phím <span class="bg-slate-100 px-1.5 py-0.5 rounded border">←</span> <span class="bg-slate-100 px-1.5 py-0.5 rounded border">→</span> để di chuyển từ • Nhấn <span class="bg-slate-100 px-1.5 py-0.5 rounded border">Space</span> để lật thẻ • Nhấn <span class="bg-slate-100 px-1.5 py-0.5 rounded border">S</span> để phát âm.
+        </div>
+    </footer>
+
+    <!-- Custom Floating Notifications (Toast) -->
+    <div id="toast" class="fixed bottom-4 right-4 bg-slate-950 text-white px-4 py-2.5 rounded-xl shadow-2xl text-sm transition-all duration-300 transform translate-y-20 opacity-0 pointer-events-none flex items-center space-x-2 z-50">
+        <i data-lucide="info" class="w-4 h-4 text-indigo-400" id="toast-icon"></i>
+        <span id="toast-message">Chào mừng bạn bắt đầu học!</span>
+    </div>
+
+    <!-- Custom Beautiful Confirmation Modal (General Purpose) -->
+    <div id="confirm-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm opacity-0 pointer-events-none transition-all duration-300">
+        <div class="bg-white rounded-3xl max-w-sm w-full p-6 shadow-2xl transform scale-90 transition-all duration-300" id="confirm-modal-box">
+            <div class="bg-rose-50 text-rose-600 p-3 rounded-full w-12 h-12 flex items-center justify-center mx-auto mb-4">
+                <i data-lucide="alert-triangle" class="w-6 h-6"></i>
+            </div>
+            <h3 class="text-lg font-bold text-slate-900 text-center mb-1" id="confirm-modal-title">Xác nhận</h3>
+            <p class="text-xs text-slate-500 text-center leading-relaxed mb-6" id="confirm-modal-desc">
+                Bạn có chắc chắn muốn thực hiện hành động này không?
+            </p>
+            <div class="flex gap-3 text-xs font-bold">
+                <button onclick="closeConfirmModal()" class="flex-1 py-3 border border-slate-200 text-slate-700 rounded-xl hover:bg-slate-50 transition-colors">
+                    Hủy bỏ
+                </button>
+                <button id="confirm-modal-action-btn" onclick="executeConfirmAction()" class="flex-1 py-3 bg-rose-600 text-white rounded-xl hover:bg-rose-700 shadow-md shadow-rose-100 transition-colors">
+                    Đồng ý
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.119.0/dist/umd/supabase.js"></script>
+    <script type="module">
+        const db = window.supabase?.createClient(
+            'https://krzzgdhxzcdacnirwgao.supabase.co',
+            "sb_publishable_hCV3zU4F-tQc2UYMx7MdXA_4cdGmFAU",
+            { auth: { storageKey: 'engcards-pro-auth' } }
+        );
+
+        // Core Default Vocabulary (47 Words)
+        const defaultVocabulary = [
+            { id: 1, category: "Bộ 1 - 47 từ", word: "Biography", pos: "n", ipa: "/baɪˈɒɡrəfi/", vi: "Tiểu sử", eg1_en: "I am reading a fascinating biography of Steve Jobs.", eg1_vi: "Tôi đang đọc một cuốn tiểu sử vô cùng hấp dẫn về Steve Jobs.", eg2_en: "She wrote an official biography of the famous artist.", eg2_vi: "Cô ấy đã viết một cuốn tiểu sử chính thức về người nghệ sĩ nổi tiếng đó." },
+            { id: 2, category: "Bộ 1 - 47 từ", word: "Enemy", pos: "n", ipa: "/ˈenəmi/", vi: "Kẻ thù", eg1_en: "In business, a competitor doesn't always have to be an enemy.", eg1_vi: "Trong kinh doanh, đối thủ cạnh tranh không phải lúc nào cũng là kẻ thù.", eg2_en: "Anger can be your own worst enemy.", eg2_vi: "Sự tức giận có thể là kẻ thù lớn nhất của chính bạn." },
+            { id: 3, category: "Bộ 1 - 47 từ", word: "Drop out", pos: "v", ipa: "/drɒp aʊt/", vi: "Bỏ học", eg1_en: "Bill Gates decided to drop out of Harvard to focus on Microsoft.", eg1_vi: "Bill Gates đã quyết định bỏ học Harvard để tập trung vào Microsoft.", eg2_en: "Don't drop out of the course just because it gets a bit difficult.", eg2_vi: "Đừng bỏ học khóa này chỉ vì nó hơi khó một chút nhé." },
+            { id: 4, category: "Bộ 1 - 47 từ", word: "Childhood", pos: "n", ipa: "/ˈtchaɪldhʊd/", vi: "Tuổi thơ", eg1_en: "I had a very happy childhood growing up in the countryside.", eg1_vi: "Tôi đã có một tuổi thơ rất hạnh phúc khi lớn lên ở vùng nông thôn.", eg2_en: "Some of my best memories are from my childhood.", eg2_vi: "Một số kỷ niệm đẹp nhất của tôi là từ thời thơ ấu." },
+            { id: 5, category: "Bộ 1 - 47 từ", word: "Field hospital", pos: "n", ipa: "/fiːld ˈhɒspɪtl/", vi: "Bệnh viện dã chiến", eg1_en: "During the pandemic, the government quickly set up a field hospital in the stadium.", eg1_vi: "Trong suốt đại dịch, chính phủ đã nhanh chóng thành lập một bệnh viện dã chiến tại sân vận động.", eg2_en: "Doctors worked day and night at the military field hospital.", eg2_vi: "Các bác sĩ đã làm việc ngày đêm tại bệnh viện dã chiến quân đội." },
+            { id: 6, category: "Bộ 1 - 47 từ", word: "Rule", pos: "v", ipa: "/ruːl/", vi: "Cai trị, thống trị", eg1_en: "Queen Elizabeth II ruled the United Kingdom for 70 years.", eg1_vi: "Nữ hoàng Elizabeth II đã cai trị Vương quốc Anh trong 70 năm.", eg2_en: "Don't let your emotions rule your decisions.", eg2_vi: "Đừng để cảm xúc thống trị các quyết định của bạn." },
+            { id: 7, category: "Bộ 1 - 47 từ", word: "The Communist Party", pos: "n", ipa: "/ðə ˈkɒmjənɪst ˈpɑːti/", vi: "Đảng Cộng sản", eg1_en: "He is a dedicated member of the Communist Party.", eg1_vi: "Ông ấy là một đảng viên tận tụy của Đảng Cộng sản.", eg2_en: "The meeting was organized by the local branch of the Communist Party.", eg2_vi: "Cuộc họp được tổ chức bởi chi bộ Đảng Cộng sản địa phương." },
+            { id: 8, category: "Bộ 1 - 47 từ", word: "Defeat", pos: "v", ipa: "/dɪˈfiːt/", vi: "Đánh bại", eg1_en: "Our team managed to defeat the champions in the final match.", eg1_vi: "Đội của chúng tôi đã xuất sắc đánh bại nhà vô địch trong trận chung kết.", eg2_en: "She worked hard to defeat her fears of public speaking.", eg2_vi: "Cô ấy đã nỗ lực hết mình để đánh bại nỗi sợ nói trước đám đông." },
+            { id: 9, category: "Bộ 1 - 47 từ", word: "Military", pos: "n", ipa: "/ˈmɪlɪtri/", vi: "Quân sự, quân ngũ", eg1_en: "He served in the military.", eg1_vi: "Anh ấy đã phục vụ trong quân ngũ.", eg2_en: "The country is planning to increase its military budget next year.", eg2_vi: "Quân gia đó đang có kế hoạch tăng ngân sách quân sự vào năm tới." },
+            { id: 10, category: "Bộ 1 - 47 từ", word: "Stylish", pos: "adj", ipa: "/ˈstaɪlɪʃ/", vi: "Kiểu cách, phong cách", eg1_en: "You look very stylish in that new jacket!", eg1_vi: "Trông bạn rất phong cách trong chiếc áo khoác mới đó!", eg2_en: "The cafe has a stylish and modern interior design.", eg2_vi: "Quán cà phê này có thiết kế nội thất rất phong cách và hiện đại." },
+            { id: 11, category: "Bộ 1 - 47 từ", word: "Genius", pos: "n", ipa: "/ˈdʒiːniəs/", vi: "Thiên tài", eg1_en: "Albert Einstein was widely recognized as a scientific genius.", eg1_vi: "Albert Einstein được công nhận rộng rãi là một thiên tài khoa học.", eg2_en: "You don't need to be a genius to understand this simple software.", eg2_vi: "Bạn không cần phải là một thiên tài để hiểu được phần mềm đơn giản này." },
+            { id: 12, category: "Bộ 1 - 47 từ", word: "Creative", pos: "adj", ipa: "/kriˈeɪtɪv/", vi: "Sáng tạo", eg1_en: "We need some creative ideas to solve this marketing problem.", eg1_vi: "Chúng ta cần một vài ý tưởng sáng tạo để giải quyết vấn đề marketing này.", eg2_en: "She is a very creative person who loves painting and writing.", eg2_vi: "Cô ấy là một người rất sáng tạo, thích vẽ tranh và viết lách." },
+            { id: 13, category: "Bộ 1 - 47 từ", word: "Battle", pos: "n", ipa: "/ˈbætl/", vi: "Trận chiến", eg1_en: "The soldiers fought bravely in the historic battle.", eg1_vi: "Các chiến sĩ đã chiến đấu vô cùng dũng cảm trong trận chiến lịch sử.", eg2_en: "Recovering from a serious illness is a long, hard battle.", eg2_vi: "Phục hồi sau một bạo bệnh là một cuộc chiến dài và gian khổ." },
+            { id: 14, category: "Bộ 1 - 47 từ", word: "Adopt", pos: "v", ipa: "/əˈdɒpt/", vi: "Nhận con nuôi / Áp dụng", eg1_en: "She adopted three children from the orphanage.", eg1_vi: "Cô ấy đã nhận nuôi ba đứa trẻ từ trại trẻ mổ côi.", eg2_en: "Our company needs to adopt new technology to stay competitive.", eg2_vi: "Công ty chúng ta cần áp dụng công nghệ mới để giữ vững năng lực cạnh tranh." },
+            { id: 15, category: "Bộ 1 - 47 từ", word: "Touchscreen", pos: "n", ipa: "/ˈtʌtʃskriːn/", vi: "Màn hình cảm ứng", eg1_en: "Most modern smartphones use a high-resolution touchscreen.", eg1_vi: "Hầu hết điện thoại thông minh hiện đại đều sử dụng màn hình cảm ứng độ phân giải cao.", eg2_en: "If the touchscreen stops responding, try restarting the device.", eg2_vi: "Nếu màn hình cảm ứng ngừng phản hồi, hãy thử khởi động lại thiết bị." },
+            { id: 16, category: "Bộ 1 - 47 từ", word: "Blockbuster", pos: "n", ipa: "/ˈbɒkbʌstə(r)/", vi: "Phim bom tấn", eg1_en: "The new Marvel movie is expected to be a summer blockbuster.", eg1_vi: "Bộ phim mới của Marvel được kỳ vọng sẽ là một bom tấn mùa hè.", eg2_en: "Their new smartphone became a global blockbuster overnight.", eg2_vi: "Chiếc điện thoại thông minh mới của họ đã trở thành một sản phẩm bom tấn toàn cầu chỉ sau một đêm." },
+            { id: 17, category: "Bộ 1 - 47 từ", word: "Rare", pos: "adj", ipa: "/reə(r)/", vi: "Hiếm", eg1_en: "It's very rare to find someone who is both highly talented and humble.", eg1_vi: "Rất hiếm khi tìm được một người vừa tài năng xuất chúng lại vừa khiêm tốn.", eg2_en: "He has a collection of rare stamps from the 19th century.", eg2_vi: "Anh ấy có một bộ sưu tập tem hiếm từ thế kỷ 19." },
+            { id: 18, category: "Bộ 1 - 47 từ", word: "Pass away", pos: "v", ipa: "/pɑːs əˈweɪ/", vi: "Qua đời", eg1_en: "My grandfather passed away peacefully in his sleep last night.", eg1_vi: "Ông nội tôi đã qua đời một cách thanh thản trong giấc ngủ vào đêm qua.", eg2_en: "We were deeply saddened to hear that our former teacher had passed away.", eg2_vi: "Chúng tôi vô cùng đau buồn khi biết tin người thầy cũ của mình đã qua đời." },
+            { id: 19, category: "Bộ 1 - 47 từ", word: "Account", pos: "n", ipa: "/əˈkaʊnt/", vi: "Câu chuyện, bản tường thuật", eg1_en: "The witness gave a detailed account of the accident to the police.", eg1_vi: "Nhân chứng đã đưa ra một bản tường thuật chi tiết về vụ tai nạn cho cảnh sát.", eg2_en: "I read an eyewitness account of the historic event.", eg2_vi: "Tôi đã đọc một lời kể của nhân chứng về sự kiện lịch sử đó." },
+            { id: 20, category: "Bộ 1 - 47 từ", word: "Cutting-edge", pos: "adj", ipa: "/ˌkʌtɪŋ ˈedʒ/", vi: "Hiện đại, tiên tiến", eg1_en: "The lab is doing cutting-edge research on artificial intelligence.", eg1_vi: "Phòng thí nghiệm đang thực hiện nghiên cứu tiên tiến nhất về trí tuệ nhân tạo.", eg2_en: "This brand is famous for its cutting-edge design and functionality.", eg2_vi: "Thương hiệu này nổi tiếng với thiết kế hiện đại và tính năng ưu việt." },
+            { id: 21, category: "Bộ 1 - 47 từ", word: "Achievement", pos: "n", ipa: "/əˈtʃiːvmənt/", vi: "Thành tích, thành tựu", eg1_en: "Graduating with honors was a remarkable achievement for her.", eg1_vi: "Tốt nghiệp loại ưu là một thành tích đáng chú ý của cô ấy.", eg2_en: "A remarkable achievement.", eg2_vi: "Một thành tích thật đáng kinh ngạc." },
+            { id: 22, category: "Bộ 1 - 47 từ", word: "Surgeon", pos: "n", ipa: "/ˈsɜːdʒən/", vi: "Bác sĩ phẫu thuật", eg1_en: "He is a highly skilled heart surgeon at the national hospital.", eg1_vi: "Ông ấy là một bác sĩ phẫu thuật tim có tay nghề rất cao tại bệnh viện quốc gia.", eg2_en: "The surgeon spent six hours in the operating room.", eg2_vi: "Bác sĩ phẫu thuật đã dành sáu tiếng đồng hồ trong phòng mổ." },
+            { id: 23, category: "Bộ 1 - 47 từ", word: "Attend", pos: "v", ipa: "/əˈtend/", vi: "Đi học, tham dự", eg1_en: "Our children attend the same school.", eg1_vi: "Con cái của chúng tôi đi học cùng một trường.", eg2_en: "How many people are expected to attend the conference tomorrow?", eg2_vi: "Dự kiến có bao nhiêu người sẽ tham dự hội nghị vào ngày mai?" },
+            { id: 24, category: "Bộ 1 - 47 từ", word: "Army", pos: "n", ipa: "/ˈɑːmi/", vi: "Quân đội", eg1_en: "After finishing high school, he decided to join the army.", eg1_vi: "Sau khi tốt nghiệp cấp ba, anh ấy quyết định gia nhập quân đội.", eg2_en: "The army was called in to help with the flood relief efforts.", eg2_vi: "Quân đội đã được huy động để giúp đỡ các nỗ lực cứu trợ lũ lụt." },
+            { id: 25, category: "Bộ 1 - 47 từ", word: "Biological", pos: "adj", ipa: "/ˌbaɪəˈlɒdʒɪkl/", vi: "(Quan hệ) ruột thịt", eg1_en: "Although she was adopted, she still wanted to find her biological parents.", eg1_vi: "Mặc dù được nhận nuôi, cô ấy vẫn muốn tìm lại cha mẹ ruột của mình.", eg2_en: "Children and their biological mother share a very strong bond.", eg2_vi: "Trẻ em và mẹ ruột của chúng có một mối liên kết vô cùng khăng khít." },
+            { id: 26, category: "Bộ 1 - 47 từ", word: "Visionary", pos: "adj", ipa: "/ˈvɪʒənri/", vi: "Có tầm nhìn", eg1_en: "Steve Jobs was a visionary leader who changed the tech industry forever.", eg1_vi: "Steve Jobs là một nhà lãnh đạo có tầm nhìn xa trông rộng, người đã thay đổi ngành công nghiệp công nghệ mãi mãi.", eg2_en: "Her visionary ideas helped the company prepare for future challenges.", eg2_vi: "Những ý tưởng có tầm nhìn của cô ấy đã giúp công ty chuẩn bị trước cho các thử thách tương lai." },
+            { id: 27, category: "Bộ 1 - 47 từ", word: "Volunteer", pos: "v", ipa: "/ˌvɒlənˈtɪə(r)/", vi: "Tình nguyện", eg1_en: "Many students volunteer to teach English to poor children on weekends.", eg1_vi: "Nieu sinh viên tình nguyện dạy tiếng Anh cho trẻ em nghèo vào cuối tuần.", eg2_en: "He has been volunteering at the local animal shelter for over a year.", eg2_vi: "Anh ấy đã làm tình nguyện tại trạm cứu hộ động vật địa phương được hơn một năm." },
+            { id: 28, category: "Bộ 1 - 47 từ", word: "Resistance war", pos: "n", ipa: "/rɪˈzɪstəns wɔː(r)/", vi: "Cuộc kháng chiến", eg1_en: "Vietnam's historical achievements during the resistance war are inspiring.", eg1_vi: "Những thành tựu lịch sử của Việt Nam trong cuộc kháng chiến rất truyền cảm hứng.", eg2_en: "Many soldiers lost their lives fighting in the resistance war.", eg2_vi: "Nhiều chiến sĩ đã hy sinh khi chiến đấu trong cuộc kháng chiến." },
+            { id: 29, category: "Bộ 1 - 47 từ", word: "Youth", pos: "n", ipa: "/juːθ/", vi: "Tuổi trẻ, thanh xuân", eg1_en: "In my youth, I used to travel a lot without worrying about the budget.", eg1_vi: "Thời trẻ của tôi, tôi từng đi du lịch rất nhiều mà không lo nghĩ về chi phí.", eg2_en: "We should provide more educational and job opportunities for the youth.", eg2_vi: "Chúng ta nên cung cấp thêm nhiều cơ hội học tập và việc làm cho giới trẻ." },
+            { id: 30, category: "Bộ 1 - 47 từ", word: "To be admired for + sth", pos: "v", ipa: "/tuː biː ədˈmaɪəd fɔː(r)/", vi: "Được ngưỡng mộ vì điều gì", eg1_en: "She is widely admired for her kindness and dedication.", eg1_vi: "Cô ấy được ngưỡng mộ rộng rãi vì sự tốt bụng và tận tụy của mình.", eg2_en: "The CEO is admired for his calm leadership style in times of crisis.", eg2_vi: "Vị CEO được ngưỡng mộ vì phong cách lãnh đạo điềm tĩnh trong thời kỳ khủng hoảng." },
+            { id: 31, category: "Bộ 1 - 47 từ", word: "Bond", pos: "v", ipa: "/bɒnd/", vi: "Kết nối, kết thân", eg1_en: "Team-building activities help colleagues bond.", eg1_vi: "Các hoạt động xây dựng đội ngũ giúp các đồng nghiệp kết thân với nhau.", eg2_en: "The camping trip was a great opportunity for the family to bond.", eg2_vi: "Chuyến cắm trại là một cơ hội tuyệt vời để cả gia đình gắn kết với nhau." },
+            { id: 32, category: "Bộ 1 - 47 từ", word: "Marriage", pos: "n", ipa: "/ˈmærɪdʒ/", vi: "Cuộc hôn nhân", eg1_en: "A successful marriage is built on mutual trust and respect.", eg1_vi: "Một cuộc hôn nhân thành công được xây dựng trên sự tin tưởng và tôn trọng lẫn nhau.", eg2_en: "They celebrated 25 years of happy marriage yesterday.", eg2_vi: "Hôm qua họ đã kỷ niệm 25 năm ngày cưới hạnh phúc." },
+            { id: 33, category: "Bộ 1 - 47 từ", word: "To be dedicated to sth", pos: "v", ipa: "/tuː biː ˈdedɪkeɪtɪd tuː/", vi: "Cống hiến cho điều gì", eg1_en: "She is dedicated to her job.", eg1_vi: "Cô ấy cống hiến cho công việc của cô ấy.", eg2_en: "This non-profit organization is dedicated to protecting animals.", eg2_vi: "Tổ chức phi lợi nhuận này được cống hiến để bảo vệ động vật." },
+            { id: 34, category: "Bộ 1 - 47 từ", word: "To be diagnosed with sth", pos: "v", ipa: "/tuː biː ˌdaɪəɡˈnəʊzd wɪð/", vi: "Được chẩn đoán mắc bệnh gì", eg1_en: "He was diagnosed with diabetes last year.", eg1_vi: "Anh ấy đã được chẩn đoán mắc bệnh tiểu đường vào năm ngoái.", eg2_en: "Finding out she was diagnosed with cancer was a huge shock.", eg2_vi: "Việc phát hiện ra cô ấy bị chẩn đoán mắc ung thư là một cú sốc lớn." },
+            { id: 35, category: "Bộ 1 - 47 từ", word: "Ambitious", pos: "adj", ipa: "/æmˈbɪʃəs/", vi: "Tham vọng", eg1_en: "She is an ambitious young lawyer who aims to become a partner soon.", eg1_vi: "Cô ấy là một luật sư trẻ đầy tham vọng, người đặt mục tiêu sớm trở thành thành viên góp vốn.", eg2_en: "The company has launched an ambitious plan to expand globally.", eg2_vi: "Công ty đã khởi động một kế hoạch đầy tham vọng nhằm mở rộng ra toàn cầu." },
+            { id: 36, category: "Bộ 1 - 47 từ", word: "Animated", pos: "adj", ipa: "/ˈænɪmeɪtɪd/", vi: "Hoạt hình, sống động", eg1_en: "Pixar is famous for producing highly emotional animated films.", eg1_vi: "Pixar nổi tiếng với việc sản xuất các bộ phim hoạt hình đầy cảm xúc.", eg2_en: "The children had an animated discussion about superheroes.", eg2_vi: "Lũ trẻ đã có một cuộc thảo luận cực kỳ sôi nổi về các siêu anh hùng." },
+            { id: 37, category: "Bộ 1 - 47 từ", word: "Devote sth to doing sth", pos: "v", ipa: "/dɪˈvəʊt ... tuː/", vi: "Dành/cống hiến cái gì cho việc gì", eg1_en: "I could only devote two hours a day to the work.", eg1_vi: "Tôi chỉ có thể dành 2 giờ một ngày cho công việc.", eg2_en: "She decided to devote her life to helping homeless people.", eg2_vi: "Cô ấy quyết định cống hiến cả cuộc đời mình để giúp đỡ những người vô gia cư." },
+            { id: 38, category: "Bộ 1 - 47 từ", word: "Death", pos: "n", ipa: "/deθ/", vi: "Cái chết", eg1_en: "The sudden death of the famous singer shocked fans.", eg1_vi: "Cái chết đột ngột của người ca sĩ nổi tiếng đã làm chấn động người hâm mộ.", eg2_en: "We must investigate the cause of death immediately.", eg2_vi: "Chúng ta phải điều tra nguyên nhân cái chết ngay lập tức." },
+            { id: 39, category: "Bộ 1 - 47 từ", word: "Diary", pos: "n", ipa: "/ˈdaɪəri/", vi: "Nhật ký", eg1_en: "She keeps a diary to write down her thoughts every night.", eg1_vi: "Cô ấy viết nhật ký mỗi tối để ghi lại những suy suy nghĩ của mình.", eg2_en: "During the war, writing a diary was her only way to cope with fear.", eg2_vi: "Trong suốt cuộc chiến, viết nhật ký là cách duy nhất để cô ấy đối phó với nỗi sợ hãi." },
+            { id: 40, category: "Bộ 1 - 47 từ", word: "Determination", pos: "n", ipa: "/dɪˌtɜːmɪˈneɪʃn/", vi: "Lòng quyết tâm", eg1_en: "With hard work and determination, you can achieve any goal.", eg1_vi: "Với sự chăm chỉ và lòng quyết tâm, bạn có thể đạt được bất kỳ mục tiêu nào.", eg2_en: "Her determination to walk again after the accident inspired everyone.", eg2_vi: "Sự quyết tâm tập đi lại của cô ấy sau vụ tai nạn đã truyền cảm hứng cho tất cả mọi người." },
+            { id: 41, category: "Bộ 1 - 47 từ", word: "Destination", pos: "n", ipa: "/ˌdestɪˈneɪʃn/", vi: "Điểm đến", eg1_en: "Ha Long Bay is a very popular tourist destination in Vietnam.", eg1_vi: "Vịnh Hạ Long là một điểm đến du lịch rất phổ biến tại Việt Nam.", eg2_en: "We finally reached our destination after a long journey.", eg2_vi: "Cuối cùng chúng tôi cũng đến được điểm đến sau một hành trình dài." },
+            { id: 42, category: "Bộ 1 - 47 từ", word: "Breathtaking", pos: "adj", ipa: "/ˈbreθteɪkɪŋ/", vi: "Đẹp nghẹt thở, ngoạn mục", eg1_en: "The view from the top of the mountain was absolutely breathtaking.", eg1_vi: "Tầm nhìn từ đỉnh núi hoàn toàn đẹp đến nghẹt thở.", eg2_en: "She took pictures of the breathtaking scenery during her trip.", eg2_vi: "Cô ấy đã chụp những bức ảnh về phong cảnh ngoạn mục trong chuyến đi của mình." },
+            { id: 43, category: "Bộ 1 - 47 từ", word: "Itinerary", pos: "n", ipa: "/aɪˈtɪnərəri/", vi: "Lộ trình, lịch trình chuyến đi", eg1_en: "We planned our travel itinerary carefully before booking the flights.", eg1_vi: "Chúng tôi đã lập lịch trình du lịch cẩn thiện trước khi đặt vé máy bay.", eg2_en: "The tour guide handed out the detailed itinerary to everyone.", eg2_vi: "Hướng dẫn viên đã phát lộ trình chi tiết cho tất cả mọi người." },
+            { id: 44, category: "Bộ 1 - 47 từ", word: "Souvenir", pos: "n", ipa: "/ˌsuːvəˈnɪə(r)/", vi: "Quà lưu niệm", eg1_en: "I bought this traditional conical hat as a souvenir from Hanoi.", eg1_vi: "Tôi mua chiếc nón lá truyền thống này làm quà lưu niệm từ Hà Nội.", eg2_en: "Don't forget to buy some local souvenirs for your friends.", eg2_vi: "Không được quên mua vài món đồ lưu niệm địa phương cho bạn bè đấy nhé." },
+            { id: 45, category: "Bộ 1 - 47 từ", word: "Collaborate", pos: "v", ipa: "/kəˈlæbəreɪt/", vi: "Hợp tác, cộng tác", eg1_en: "We need to collaborate closely with the design team on this project.", eg1_vi: "Chúng ta cần cộng tác chặt chẽ với đội thiết kế trong dự án này.", eg2_en: "Researchers from different nations collaborated to develop the vaccine.", eg2_vi: "Các nhà nghiên cứu từ các quốc gia khác nhau đã hợp tác để phát triển vắc-xin." },
+            { id: 46, category: "Bộ 1 - 47 từ", word: "Deadline", pos: "n", ipa: "/ˈdedlaɪn/", vi: "Hạn chót, hạn hoàn thành", eg1_en: "The deadline for submitting the financial report is this Friday.", eg1_vi: "Hạn chót để nộp báo cáo tài chính là thứ Sáu tuần này.", eg2_en: "We had to work overtime to meet the tight deadline.", eg2_vi: "Chúng tôi đã phải làm thêm giờ để kịp tiến độ hạn chót eo hẹp." },
+            { id: 47, category: "Bộ 1 - 47 từ", word: "Negotiate", pos: "v", ipa: "/nɪˈɡəʊʃieɪt/", vi: "Đàm phán, thương lượng", eg1_en: "Our manager is trying to negotiate a better deal with the supplier.", eg1_vi: "Quản lý của chúng tôi đang cố gắng thương lượng một thỏa thuận tốt hơn với nhà cung cấp.", eg2_en: "Negotiating skills are extremely important for sales representatives.", eg2_vi: "Kỹ năng đàm phán là cực kỳ quan trọng đối với các đại diện bán hàng." }
+        ];
+
+        // Global Dynamic Application States
+        let currentUser = null;
+        let vocabularyData = [];
+        let currentDeck = [];
+        let currentIndex = 0;
+        let isFlipped = false;
+        let isShuffled = false;
+        let currentCategory = 'all'; 
+        let searchQuery = '';
+        let currentMode = 'flashcard'; 
+
+        // Memory states for tracking
+        let starredIds = new Set();
+        let learntIds = new Set();
+        let leitnerLevels = {};
+        let reviewHistory = {};
+
+        // Quiz game variables
+        let quizQuestions = [];
+        let quizCurrentIndex = 0;
+        let quizCorrectAnswers = 0;
+        let quizStreak = 0;
+        let quizHasSelected = false;
+
+        // Typing game variables
+        let typingCurrentItem = null;
+        let typingHintIndex = 0;
+
+        // Confirmation dialog states
+        let confirmActionType = null; 
+        let pendingDeleteId = null; 
+        let pendingDeleteDeckName = null;
+
+        // Element DOM caching
+        let cardContainer, cardFlipper, starIcon, cardWord, cardPosIpa, cardTopicTag, cardTopicTagBack;
+        let cardMeaning, cardSynonymContainer, cardSynonym, cardEg1En, cardEg1Vi, cardEg2En, cardEg2Vi;
+        let cardCounter, cardProgressBar, cardStatusLabel, learntBtn, shuffleBtn;
+        let emptyState, activeArea;
+
+        function escapeHTML(value) {
+            const entities = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
+            return String(value ?? '').replace(/[&<>"']/g, char => entities[char]);
+        }
+
+        // Set Connection States UI
+        function updateSyncUI(status, style) {
+            const dot = document.getElementById('sync-status-dot');
+            const text = document.getElementById('sync-status-text');
+            const textMobile = document.getElementById('sync-status-text-mobile');
+            const badge = document.getElementById('sync-status-badge');
+
+            if (!dot || !text || !badge) return;
+
+            text.textContent = status;
+            if (textMobile) textMobile.textContent = status;
+            
+            if (style === 'success') {
+                dot.className = "w-2 h-2 rounded-full bg-emerald-500 mr-1.5";
+                badge.className = "flex items-center text-emerald-700 bg-emerald-50 px-2 py-1 rounded-full border border-emerald-100";
+            } else if (style === 'error') {
+                dot.className = "w-2 h-2 rounded-full bg-rose-500 mr-1.5";
+                badge.className = "flex items-center text-rose-700 bg-rose-50 px-2 py-1 rounded-full border border-rose-100";
+            } else {
+                dot.className = "w-2 h-2 rounded-full bg-indigo-500 mr-1.5 animate-pulse";
+                badge.className = "flex items-center text-indigo-700 bg-indigo-50 px-2 py-1 rounded-full border border-indigo-100";
+            }
+        }
+
+        const authForm = document.getElementById('cloud-auth-form');
+        const authMessage = document.getElementById('cloud-auth-message');
+        const retryLoad = document.getElementById('cloud-retry-load');
+        const retrySave = document.getElementById('cloud-retry-save');
+        const signOutButton = document.getElementById('cloud-sign-out');
+        const pageUrl = new URL('./', location.href).href;
+        let revision = 0;
+        let dirty = false;
+        let saveInFlight = null;
+        let conflict = false;
+
+        function appSnapshot() {
+            return {
+                vocabulary: vocabularyData,
+                starredIds: [...starredIds],
+                learntIds: [...learntIds],
+                leitnerLevels,
+                reviewHistory
+            };
+        }
+
+        function syncToSupabase() {
+            dirty = true;
+            return flushSave();
+        }
+
+        function flushSave() {
+            if (saveInFlight) return saveInFlight;
+            if (!currentUser || !dirty || conflict) return Promise.resolve(!dirty);
+            retrySave.classList.add('hidden');
+            saveInFlight = (async () => {
+                try {
+                    while (dirty) {
+                        dirty = false;
+                        updateSyncUI('Đang lưu...', 'sync');
+                        const state = JSON.parse(JSON.stringify(appSnapshot()));
+                        const user_id = currentUser.id;
+                        const query = revision === 0
+                            ? db.from('engcards_state').insert({ user_id, state })
+                            : db.from('engcards_state').update({ state, revision: revision + 1 })
+                                .eq('user_id', user_id).eq('revision', revision);
+                        const { data, error } = await query.select('revision').maybeSingle();
+                        if (!data && (!error || error.code === '23505')) conflict = true;
+                        if (error || !data) throw error || new Error('Concurrent update');
+                        revision = data.revision;
+                    }
+                    updateSyncUI('Đã lưu', 'success');
+                    return true;
+                } catch (error) {
+                    dirty = true;
+                    console.error('EngCards save:', error);
+                    updateSyncUI('Chưa lưu', 'error');
+                    retrySave.textContent = conflict ? 'Có bản mới' : 'Thử lưu lại';
+                    retrySave.classList.remove('hidden');
+                    showToast(conflict
+                        ? 'Thiết bị khác đã lưu bản mới. Hãy xuất JSON nếu cần giữ từ vừa sửa, rồi tải lại trang.'
+                        : 'Chưa lưu lên đám mây. Hãy kiểm tra mạng và bấm Thử lưu lại.');
+                    return false;
+                } finally {
+                    saveInFlight = null;
+                }
+            })();
+            return saveInFlight;
+        }
+
+        retrySave.addEventListener('click', () => {
+            if (conflict) {
+                showToast('Hãy xuất JSON trong Quản Lý Từ nếu cần giữ từ vừa sửa, rồi tải lại trang.');
+                return;
+            }
+            void flushSave();
+        });
+        window.addEventListener('online', () => { void flushSave(); });
+        window.addEventListener('beforeunload', event => {
+            if (dirty || saveInFlight) {
+                event.preventDefault();
+                event.returnValue = true;
+            }
+        });
+
+        function authError(error) {
+            switch (error?.code) {
+                case 'invalid_credentials': return 'Email hoặc mật khẩu không đúng.';
+                case 'email_not_confirmed': return 'Hãy xác nhận email rồi đăng nhập lại.';
+                case 'over_email_send_rate_limit':
+                case 'over_request_rate_limit': return 'Đã gửi quá nhiều yêu cầu. Hãy thử lại sau.';
+                case 'email_address_not_authorized': return 'Dịch vụ gửi email chưa hỗ trợ địa chỉ này.';
+                case 'weak_password': return 'Mật khẩu chưa đủ mạnh.';
+                default: return 'Không thể xử lý yêu cầu. Hãy kiểm tra thông tin và thử lại.';
+            }
+        }
+
+        async function initAuth() {
+            retryLoad.classList.add('hidden');
+            authMessage.textContent = 'Đang kết nối Supabase…';
+            try {
+                if (!db) throw new Error('Supabase SDK unavailable');
+                const { data: { session }, error } = await db.auth.getSession();
+                if (error && !session && !location.hash.includes('error=')) throw error;
+                if (session) {
+                    await loadAccount(session.user);
+                } else {
+                    authMessage.textContent = location.hash.includes('error=')
+                        ? 'Liên kết xác nhận không hợp lệ hoặc đã hết hạn. Hãy thử đăng ký lại.'
+                        : 'Đăng nhập để lưu từ vựng và tiến độ trên các thiết bị.';
+                    authForm.classList.remove('hidden');
+                    updateSyncUI('Chưa đăng nhập', 'sync');
+                }
+            } catch (error) {
+                console.error('EngCards auth:', error);
+                authMessage.textContent = 'Không thể kết nối. Hãy kiểm tra mạng và thử lại.';
+                retryLoad.classList.remove('hidden');
+                updateSyncUI('Lỗi kết nối', 'error');
+            }
+        }
+
+        async function loadAccount(user) {
+            authForm.classList.add('hidden');
+            authMessage.textContent = 'Đang tải dữ liệu học…';
+            updateSyncUI('Đang tải...', 'sync');
+            const { data, error } = await db.from('engcards_state')
+                .select('state,revision').eq('user_id', user.id).maybeSingle();
+            if (error) throw error;
+            const state = data?.state || {};
+            vocabularyData = state.vocabulary ?? structuredClone(defaultVocabulary);
+            starredIds = new Set(state.starredIds || []);
+            learntIds = new Set(state.learntIds || []);
+            leitnerLevels = state.leitnerLevels || {};
+            reviewHistory = state.reviewHistory || {};
+            initLeitnerLevels();
+            revision = data?.revision || 0;
+            currentUser = user;
+            document.getElementById('app-nav').classList.remove('hidden');
+            signOutButton.classList.remove('hidden');
+            updateSyncUI('Đã đồng bộ', 'success');
+            appStartSetup();
+        }
+
+        retryLoad.addEventListener('click', initAuth);
+        authForm.addEventListener('submit', async event => {
+            event.preventDefault();
+            const form = new FormData(authForm);
+            const credentials = { email: form.get('email').trim(), password: form.get('password') };
+            const signUp = event.submitter?.value === 'signup';
+            if (signUp && credentials.password.length < 8) {
+                authMessage.textContent = 'Dùng mật khẩu ít nhất 8 ký tự.';
+                return;
+            }
+            const buttons = authForm.querySelectorAll('button');
+            buttons.forEach(button => { button.disabled = true; });
+            try {
+                authMessage.textContent = 'Đang xử lý…';
+                const { data, error } = signUp
+                    ? await db.auth.signUp({ ...credentials, options: { emailRedirectTo: pageUrl } })
+                    : await db.auth.signInWithPassword(credentials);
+                if (error) throw error;
+                if (data.session) {
+                    authForm.reset();
+                    await initAuth();
+                } else {
+                    authMessage.textContent = 'Hãy mở email xác nhận để hoàn tất đăng ký, rồi đăng nhập.';
+                }
+            } catch (error) {
+                authMessage.textContent = authError(error);
+            } finally {
+                buttons.forEach(button => { button.disabled = false; });
+            }
+        });
+
+        signOutButton.addEventListener('click', async () => {
+            signOutButton.disabled = true;
+            if (await flushSave()) {
+                const { error } = await db.auth.signOut({ scope: 'local' });
+                if (!error) {
+                    location.replace(pageUrl);
+                    return;
+                }
+                showToast('Không thể đăng xuất. Hãy thử lại.');
+            } else {
+                showToast('Vẫn còn dữ liệu chưa lưu. Hãy đồng bộ trước khi đăng xuất.');
+            }
+            signOutButton.disabled = false;
+        });
+
+        // Setup DOM objects and launch logic
+        function appStartSetup() {
+            const overlay = document.getElementById('cloud-loading-overlay');
+            if (overlay) overlay.classList.add('hidden');
+            
+            document.getElementById('section-flashcard').classList.remove('hidden');
+
+            buildDeck();
+            renderDeckSelector();
+            updateUI();
+        }
+
+        // Init database levels locally
+        function initLeitnerLevels() {
+            vocabularyData.forEach(item => {
+                if (!leitnerLevels[item.id]) {
+                    leitnerLevels[item.id] = 1; 
+                    reviewHistory[item.id] = Date.now() - (24 * 60 * 60 * 1000); 
+                }
+            });
+        }
+
+        // Get unique decks/categories dynamically
+        function getUniqueDecks() {
+            const decks = new Set();
+            vocabularyData.forEach(item => {
+                if (item.category) decks.add(item.category);
+            });
+            return Array.from(decks);
+        }
+
+        // On Load setup
+        window.addEventListener('DOMContentLoaded', () => {
+            // DOM mapping
+            cardContainer = document.getElementById('card-container');
+            cardFlipper = document.getElementById('card-flipper');
+            starIcon = document.getElementById('star-icon');
+            cardWord = document.getElementById('card-word');
+            cardPosIpa = document.getElementById('card-pos-ipa');
+            cardTopicTag = document.getElementById('card-topic-tag');
+            cardTopicTagBack = document.getElementById('card-topic-tag-back');
+            cardMeaning = document.getElementById('card-meaning');
+            cardSynonymContainer = document.getElementById('card-synonym-container');
+            cardSynonym = document.getElementById('card-synonym');
+            cardEg1En = document.getElementById('card-eg1-en');
+            cardEg1Vi = document.getElementById('card-eg1-vi');
+            cardEg2En = document.getElementById('card-eg2-en');
+            cardEg2Vi = document.getElementById('card-eg2-vi');
+            cardCounter = document.getElementById('card-counter');
+            cardProgressBar = document.getElementById('card-progress-bar');
+            cardStatusLabel = document.getElementById('card-status-label');
+            learntBtn = document.getElementById('learnt-btn');
+            shuffleBtn = document.getElementById('shuffle-btn');
+            emptyState = document.getElementById('flashcard-empty-state');
+            activeArea = document.getElementById('flashcard-active-area');
+
+            setupTouchGestures();
+            setupKeyboardNav();
+            
+            // Trigger authentication directly
+            initAuth();
+        });
+
+        // Mode Navigation Handler
+        window.switchMode = function(mode) {
+            if (!currentUser) return;
+            currentMode = mode;
+            
+            // Toggle Section displays
+            document.getElementById('section-flashcard').classList.add('hidden');
+            document.getElementById('section-quiz').classList.add('hidden');
+            document.getElementById('section-typing').classList.add('hidden');
+            document.getElementById('section-schedule').classList.add('hidden');
+            document.getElementById('section-manager').classList.add('hidden');
+            
+            const modes = ['flashcard', 'quiz', 'typing', 'schedule', 'manager'];
+            modes.forEach(m => {
+                const navBtn = document.getElementById(`nav-${m}`);
+                if (m === mode) {
+                    navBtn.className = "flex-1 flex items-center justify-center space-x-1.5 py-3 px-2 border-b-2 border-indigo-600 text-indigo-600 font-bold text-xs sm:text-sm whitespace-nowrap transition-all";
+                } else {
+                    navBtn.className = "flex-1 flex items-center justify-center space-x-1.5 py-3 px-2 border-b-2 border-transparent text-slate-500 hover:text-indigo-600 font-semibold text-xs sm:text-sm whitespace-nowrap transition-all";
+                }
+            });
+
+            if (mode === 'flashcard') {
+                document.getElementById('section-flashcard').classList.remove('hidden');
+                renderDeckSelector();
+                updateUI();
+            } else if (mode === 'quiz') {
+                document.getElementById('section-quiz').classList.remove('hidden');
+                startQuizMode();
+            } else if (mode === 'typing') {
+                document.getElementById('section-typing').classList.remove('hidden');
+                startTypingMode();
+            } else if (mode === 'schedule') {
+                document.getElementById('section-schedule').classList.remove('hidden');
+                renderScheduleDashboard();
+            } else if (mode === 'manager') {
+                document.getElementById('section-manager').classList.remove('hidden');
+                document.getElementById('json-io-area').value = '';
+                document.getElementById('bulk-deck-name').value = '';
+                document.getElementById('bulk-import-area').value = '';
+                populateCategorySelect();
+            }
+
+            showToast(`Đã chuyển sang: ${getModeName(mode)}`);
+        }
+
+        function getModeName(mode) {
+            if (mode === 'flashcard') return 'Thẻ Flashcard';
+            if (mode === 'quiz') return 'Trắc Nghiệm';
+            if (mode === 'typing') return 'Luyện Viết Từ';
+            if (mode === 'schedule') return 'Lịch Trình';
+            if (mode === 'manager') return 'Quản Lý Từ';
+            return '';
+        }
+
+        // Search & Dynamic Deck filter builder
+        function buildDeck() {
+            let filtered = [...vocabularyData];
+            
+            // Filter by active category / Box level
+            if (currentCategory === 'starred') {
+                filtered = filtered.filter(item => starredIds.has(item.id));
+            } else if (currentCategory.startsWith('box-')) {
+                const level = parseInt(currentCategory.split('-')[1]);
+                filtered = filtered.filter(item => (leitnerLevels[item.id] || 1) === level);
+            } else if (currentCategory !== 'all') {
+                filtered = filtered.filter(item => item.category === currentCategory);
+            }
+
+            // Filter by search query
+            if (searchQuery.trim() !== '') {
+                const query = searchQuery.toLowerCase().trim();
+                filtered = filtered.filter(item => 
+                    item.word.toLowerCase().includes(query) || 
+                    item.vi.toLowerCase().includes(query)
+                );
+            }
+
+            // Handle Shuffle state
+            if (isShuffled) {
+                for (let i = filtered.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [filtered[i], filtered[j]] = [filtered[j], filtered[i]];
+                }
+            } else {
+                filtered.sort((a, b) => a.id - b.id);
+            }
+
+            currentDeck = filtered;
+            if (currentIndex >= currentDeck.length) {
+                currentIndex = 0;
+            }
+        }
+
+        // DYNAMIC DECK SELECTOR
+        window.renderDeckSelector = function() {
+            const container = document.getElementById('decks-list-container');
+            if (!container) return;
+
+            const decks = getUniqueDecks();
+            let html = '';
+
+            // Card 1: "Tất cả"
+            const totalCount = vocabularyData.length;
+            html += `
+                <div onclick="selectActiveDeck('all')" class="bg-gradient-to-r from-pink-500 to-rose-600 text-white rounded-2xl p-5 shadow-md hover:scale-[1.02] active:scale-[0.99] transition-all cursor-pointer border border-rose-400/20 relative overflow-hidden">
+                    <div class="absolute right-4 bottom-2 opacity-10">
+                        <i data-lucide="layers" class="w-24 h-24"></i>
+                    </div>
+                    <div class="relative z-10 flex justify-between items-center">
+                        <div>
+                            <span class="text-[10px] uppercase tracking-widest font-black text-rose-100">Luyện tập chung</span>
+                            <h3 class="text-2xl font-black mt-1">Tất cả</h3>
+                            <p class="text-xs text-rose-100 mt-1">Học toàn bộ ${totalCount} từ vựng đã nạp</p>
+                        </div>
+                        <div class="bg-white/20 p-3 rounded-full">
+                            <i data-lucide="arrow-right" class="w-5 h-5 text-white"></i>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            // Cards for each "Bộ" (Dynamic sets)
+            decks.forEach((deckName, idx) => {
+                const deckCount = vocabularyData.filter(item => item.category === deckName).length;
+                
+                const colors = [
+                    { bg: "from-indigo-50 to-white", border: "border-indigo-100", title: "text-indigo-950", countBg: "bg-indigo-100 text-indigo-700", iconColor: "text-indigo-600" },
+                    { bg: "from-emerald-50 to-white", border: "border-emerald-100", title: "text-emerald-950", countBg: "bg-emerald-100 text-emerald-700", iconColor: "text-emerald-600" },
+                    { bg: "from-purple-50 to-white", border: "border-purple-100", title: "text-purple-950", countBg: "bg-purple-100 text-purple-700", iconColor: "text-purple-600" },
+                    { bg: "from-amber-50 to-white", border: "border-amber-100", title: "text-amber-950", countBg: "bg-amber-100 text-amber-700", iconColor: "text-amber-600" }
+                ];
+                const design = colors[idx % colors.length];
+
+                html += `
+                    <div data-select-deck="${escapeHTML(deckName)}" class="bg-gradient-to-r ${design.bg} rounded-2xl p-5 shadow-sm hover:shadow-md hover:scale-[1.01] active:scale-[0.99] transition-all cursor-pointer border ${design.border} flex justify-between items-center group">
+                        <div class="space-y-1 overflow-hidden mr-2">
+                            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Chủ đề học tập</span>
+                            <h3 class="text-lg sm:text-xl font-extrabold ${design.title} group-hover:text-indigo-600 transition-colors truncate">${escapeHTML(deckName)}</h3>
+                            <div class="flex items-center space-x-2 mt-2">
+                                <span class="text-xs px-2 py-0.5 rounded-md font-bold ${design.countBg}">${deckCount} từ vựng</span>
+                            </div>
+                        </div>
+                        <div class="flex items-center space-x-1.5 shrink-0">
+                            <button data-delete-deck="${escapeHTML(deckName)}" class="p-2 text-rose-500 hover:text-white hover:bg-rose-600 rounded-xl transition-all border border-transparent hover:border-rose-300" title="Xóa toàn bộ bộ học này">
+                                <i data-lucide="trash-2" class="w-4 h-4"></i>
+                            </button>
+                            <div class="p-3 bg-slate-100 group-hover:bg-indigo-600 text-slate-500 group-hover:text-white rounded-full transition-all">
+                                <i data-lucide="play" class="w-4 h-4 fill-current"></i>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+
+            // Card for Saved Words
+            if (starredIds.size > 0) {
+                html += `
+                    <div onclick="selectActiveDeck('starred')" class="bg-gradient-to-r from-amber-500 to-yellow-600 text-white rounded-2xl p-5 shadow-sm hover:scale-[1.01] active:scale-[0.99] transition-all cursor-pointer flex justify-between items-center relative overflow-hidden">
+                        <div class="absolute right-4 bottom-2 opacity-10">
+                            <i data-lucide="star" class="w-20 h-24"></i>
+                        </div>
+                        <div class="relative z-10">
+                            <span class="text-[10px] font-bold text-amber-100 uppercase tracking-wider">Thẻ ưu tiên</span>
+                            <h3 class="text-xl font-extrabold">Từ vựng đã lưu</h3>
+                            <p class="text-xs text-amber-100 mt-1">Đang lưu ${starredIds.size} từ vựng ôn thêm</p>
+                        </div>
+                        <div class="bg-white/20 p-3 rounded-full text-white">
+                            <i data-lucide="star" class="w-4 h-4 fill-white"></i>
+                        </div>
+                    </div>
+                `;
+            }
+
+            container.innerHTML = html;
+            container.querySelectorAll('[data-select-deck]').forEach(element => {
+                element.onclick = () => selectActiveDeck(element.dataset.selectDeck);
+            });
+            container.querySelectorAll('[data-delete-deck]').forEach(button => {
+                button.onclick = event => {
+                    event.stopPropagation();
+                    openConfirmModal('deleteDeck', button.dataset.deleteDeck);
+                };
+            });
+            lucide.createIcons();
+        }
+
+        // Action when choosing a set card
+        window.selectActiveDeck = function(deckName) {
+            currentCategory = deckName;
+            buildDeck();
+            currentIndex = 0;
+            isFlipped = false;
+            
+            // Toggle view: Hide Selector, Show Card Player
+            document.getElementById('deck-selector-view').classList.add('hidden');
+            document.getElementById('flashcard-player-view').classList.remove('hidden');
+
+            // Set current deck title text
+            const badge = document.getElementById('active-deck-title-badge');
+            if (deckName === 'all') {
+                badge.innerHTML = `<i data-lucide="library" class="w-3.5 h-3.5 inline mr-1"></i> Tất cả từ vựng`;
+            } else if (deckName === 'starred') {
+                badge.innerHTML = `<i data-lucide="star" class="w-3.5 h-3.5 inline mr-1 text-amber-400 fill-amber-400"></i> Đã lưu`;
+            } else if (deckName.startsWith('box-')) {
+                const level = deckName.split('-')[1];
+                badge.innerHTML = `<i data-lucide="package" class="w-3.5 h-3.5 inline mr-1 text-indigo-600"></i> Hộp ${escapeHTML(level)}`;
+            } else {
+                badge.innerHTML = `<i data-lucide="folder" class="w-3.5 h-3.5 inline mr-1"></i> ${escapeHTML(deckName)}`;
+            }
+
+            cardFlipper.classList.remove('flipped');
+            updateUI();
+        }
+
+        // Action to go back to the deck selection dashboard
+        window.backToDeckSelector = function() {
+            document.getElementById('flashcard-player-view').classList.add('hidden');
+            document.getElementById('deck-selector-view').classList.remove('hidden');
+            renderDeckSelector();
+        }
+
+        window.handleSearch = function() {
+            const searchInput = document.getElementById('search-input');
+            if (!searchInput) return;
+            searchQuery = searchInput.value;
+            buildDeck();
+            currentIndex = 0;
+            isFlipped = false;
+            cardFlipper.classList.remove('flipped');
+            updateUI();
+        }
+
+        // Card flip and navigation
+        window.flipCard = function() {
+            isFlipped = !isFlipped;
+            if (isFlipped) {
+                cardFlipper.classList.add('flipped');
+            } else {
+                cardFlipper.classList.remove('flipped');
+            }
+        }
+
+        // Mouse click on the flashcard triggers flip
+        document.getElementById('card-container').addEventListener('click', (e) => {
+            if (e.target.closest('button') || e.target.closest('input')) {
+                return;
+            }
+            flipCard();
+        });
+
+        window.prevCard = function() {
+            if (currentDeck.length <= 1) return;
+            isFlipped = false;
+            cardFlipper.classList.remove('flipped');
+            
+            setTimeout(() => {
+                currentIndex = (currentIndex - 1 + currentDeck.length) % currentDeck.length;
+                updateUI();
+            }, 150);
+        }
+
+        window.nextCard = function() {
+            if (currentDeck.length <= 1) return;
+            isFlipped = false;
+            cardFlipper.classList.remove('flipped');
+            
+            setTimeout(() => {
+                currentIndex = (currentIndex + 1) % currentDeck.length;
+                updateUI();
+            }, 150);
+        }
+
+        window.toggleShuffle = function() {
+            isShuffled = !isShuffled;
+            if (isShuffled) {
+                shuffleBtn.classList.add('bg-indigo-50', 'text-indigo-600', 'border-indigo-200');
+                showToast('Đã bật xáo trộn ngẫu nhiên!');
+            } else {
+                shuffleBtn.classList.remove('bg-indigo-50', 'text-indigo-600', 'border-indigo-200');
+                showToast('Đã tắt xáo trộn ngẫu nhiên!');
+            }
+            buildDeck();
+            currentIndex = 0;
+            isFlipped = false;
+            cardFlipper.classList.remove('flipped');
+            updateUI();
+        }
+
+        // Leitner System Logic
+        function promoteLeitner(id) {
+            if (!leitnerLevels[id]) leitnerLevels[id] = 1;
+            if (leitnerLevels[id] < 5) {
+                leitnerLevels[id]++;
+            }
+            reviewHistory[id] = Date.now();
+            syncToSupabase();
+        }
+
+        function demoteLeitner(id) {
+            leitnerLevels[id] = 1;
+            reviewHistory[id] = Date.now();
+            syncToSupabase();
+        }
+
+        // Dynamic click-to-review individual Leitner Box level
+        window.reviewLeitnerBox = function(level) {
+            const listToReview = vocabularyData.filter(item => (leitnerLevels[item.id] || 1) === level);
+            if (listToReview.length === 0) {
+                showToast(`Hộp ${level} hiện không có từ nào để học!`);
+                return;
+            }
+
+            currentCategory = `box-${level}`;
+            buildDeck();
+            currentIndex = 0;
+            isFlipped = false;
+            cardFlipper.classList.remove('flipped');
+
+            // Toggle view: Hide Selector, Show Card Player
+            document.getElementById('deck-selector-view').classList.add('hidden');
+            document.getElementById('flashcard-player-view').classList.remove('hidden');
+
+            // Set Title Badge
+            const badge = document.getElementById('active-deck-title-badge');
+            badge.innerHTML = `<i data-lucide="package" class="w-3.5 h-3.5 inline mr-1 text-indigo-600"></i> Hộp Leitner ${level}`;
+
+            switchMode('flashcard');
+            showToast(`Đang lọc ${listToReview.length} từ trong Hộp ${level} để ôn tập riêng! 📦`);
+        }
+
+        // Favorite/Star Action
+        window.toggleStar = function(event) {
+            event.stopPropagation();
+            if (currentDeck.length === 0) return;
+            
+            const currentItem = currentDeck[currentIndex];
+            if (starredIds.has(currentItem.id)) {
+                starredIds.delete(currentItem.id);
+                starIcon.setAttribute('class', 'w-6 h-6 stroke-white fill-transparent transition-all');
+                showToast('Đã bỏ lưu từ này!');
+            } else {
+                starredIds.add(currentItem.id);
+                starIcon.setAttribute('class', 'w-6 h-6 stroke-amber-300 fill-amber-300 transition-all scale-125');
+                setTimeout(() => starIcon.setAttribute('class', 'w-6 h-6 stroke-amber-400 fill-amber-400 transition-all'), 150);
+                showToast('Đã lưu để ôn tập thêm!');
+            }
+            
+            updateTopCounters();
+            buildDeck();
+            syncToSupabase();
+        }
+
+        window.markAsLearnt = function(event) {
+            event.stopPropagation();
+            if (currentDeck.length === 0) return;
+
+            const currentItem = currentDeck[currentIndex];
+            if (learntIds.has(currentItem.id)) {
+                learntIds.delete(currentItem.id);
+                leitnerLevels[currentItem.id] = 1; 
+                showToast('Đã bỏ đánh dấu thuộc lòng!');
+            } else {
+                learntIds.add(currentItem.id);
+                leitnerLevels[currentItem.id] = 5; 
+                showToast('Tuyệt vời! Đã đẩy từ này lên Hộp 5! 🎉');
+                setTimeout(() => {
+                    if (currentDeck.length > 1) nextCard();
+                }, 1000);
+            }
+            updateUI();
+            updateTopCounters();
+            syncToSupabase();
+        }
+
+        window.speakWord = function(event) {
+            if (event) event.stopPropagation();
+            if (currentDeck.length === 0) return;
+            const word = currentDeck[currentIndex].word;
+            speak(word);
+        }
+
+        function speak(text) {
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel();
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.lang = 'en-US';
+                utterance.rate = 0.85; 
+                window.speechSynthesis.speak(utterance);
+            } else {
+                showToast('Trình duyệt không hỗ trợ phát âm!');
+            }
+        }
+
+        // Render Active Flashcard details
+        function updateUI() {
+            updateTopCounters();
+
+            document.getElementById('total-words-count').textContent = vocabularyData.length;
+
+            if (currentDeck.length === 0) {
+                emptyState.classList.remove('hidden');
+                activeArea.classList.add('hidden');
+                return;
+            }
+
+            emptyState.classList.add('hidden');
+            activeArea.classList.remove('hidden');
+
+            const item = currentDeck[currentIndex];
+
+            // Set front values
+            cardWord.textContent = item.word;
+            cardPosIpa.innerHTML = `<span class="italic bg-indigo-500/25 px-2 py-0.5 rounded-md mr-1.5 text-sm">${escapeHTML(item.pos)}</span> ${escapeHTML(item.ipa)}`;
+            
+            cardTopicTag.textContent = `📦 ${item.category || 'Bộ tự thêm'}`;
+            cardTopicTagBack.textContent = `📦 ${item.category || 'Bộ tự thêm'}`;
+
+            // Star Button State
+            if (starredIds.has(item.id)) {
+                starIcon.setAttribute('class', 'w-6 h-6 stroke-amber-400 fill-amber-400 transition-all');
+            } else {
+                starIcon.setAttribute('class', 'w-6 h-6 stroke-white fill-transparent transition-all');
+            }
+
+            // Set back values
+            cardMeaning.textContent = item.vi;
+            
+            if (item.note) {
+                cardSynonymContainer.classList.remove('hidden');
+                cardSynonym.textContent = item.note;
+            } else {
+                cardSynonymContainer.classList.add('hidden');
+            }
+
+            // Set Examples
+            if (item.eg1_en) {
+                document.getElementById('eg-1').classList.remove('hidden');
+                cardEg1En.textContent = item.eg1_en;
+                cardEg1Vi.textContent = item.eg1_vi || '';
+            } else {
+                document.getElementById('eg-1').classList.add('hidden');
+            }
+
+            if (item.eg2_en) {
+                document.getElementById('eg-2').classList.remove('hidden');
+                cardEg2En.textContent = item.eg2_en;
+                cardEg2Vi.textContent = item.eg2_vi || '';
+            } else {
+                document.getElementById('eg-2').classList.add('hidden');
+            }
+
+            // Update Progress Tracking
+            const progressVal = ((currentIndex + 1) / currentDeck.length) * 100;
+            cardCounter.textContent = `Thẻ ${currentIndex + 1} / ${currentDeck.length}`;
+            cardProgressBar.style.width = `${progressVal}%`;
+
+            // Spaced repetition status label
+            const boxLevel = leitnerLevels[item.id] || 1;
+            cardStatusLabel.textContent = `Hộp ${boxLevel}`;
+            if (boxLevel === 5) {
+                cardStatusLabel.className = "text-xs text-emerald-600 font-extrabold flex items-center";
+                cardStatusLabel.innerHTML = `<i data-lucide="award" class="w-3 h-3 mr-0.5 text-amber-500"></i> Hộp 5 (Thành thạo)`;
+            } else if (boxLevel >= 3) {
+                cardStatusLabel.className = "text-xs text-indigo-600 font-bold";
+            } else {
+                cardStatusLabel.className = "text-xs text-slate-400 font-medium";
+            }
+
+            // "Learnt" button state
+            if (learntIds.has(item.id)) {
+                learntBtn.className = "text-xs font-semibold text-emerald-700 bg-emerald-100 px-2.5 py-1.5 rounded-lg transition-colors flex items-center border border-emerald-200 shadow-inner";
+                learntBtn.innerHTML = `<i data-lucide="check-circle" class="w-3.5 h-3.5 mr-1 text-emerald-600"></i> Đã Thuộc`;
+            } else {
+                learntBtn.className = "text-xs font-semibold text-slate-600 hover:bg-slate-100 px-2.5 py-1.5 rounded-lg transition-colors flex items-center border border-slate-200";
+                learntBtn.innerHTML = `<i data-lucide="check" class="w-3.5 h-3.5 mr-1"></i> Thuộc lòng`;
+            }
+
+            lucide.createIcons();
+        }
+
+        // Fill Selector list of Decks inside the Word Manager tab
+        window.populateCategorySelect = function() {
+            const select = document.getElementById('new-category-select');
+            if (!select) return;
+
+            const decks = getUniqueDecks();
+            let html = '';
+            decks.forEach(deck => {
+                html += `<option value="${escapeHTML(deck)}">📦 ${escapeHTML(deck)}</option>`;
+            });
+            html += `<option value="__NEW__">➕ [Tạo bộ mới...]</option>`;
+            select.innerHTML = html;
+            toggleNewCategoryInput();
+        }
+
+        window.toggleNewCategoryInput = function() {
+            const select = document.getElementById('new-category-select');
+            const container = document.getElementById('new-category-name-container');
+            const newCatInput = document.getElementById('new-category-name');
+            if (select.value === '__NEW__') {
+                container.classList.remove('hidden');
+                newCatInput.required = true;
+                newCatInput.focus();
+            } else {
+                container.classList.add('hidden');
+                newCatInput.required = false;
+            }
+        }
+
+        // Form Submission to Add New Words (Single Word)
+        window.handleAddNewWord = async function(event) {
+            event.preventDefault();
+            
+            const wordVal = document.getElementById('new-word').value.trim();
+            const viVal = document.getElementById('new-vi').value.trim();
+            const posVal = document.getElementById('new-pos').value;
+            const ipaVal = document.getElementById('new-ipa').value.trim();
+            
+            // Get category/deck
+            const catSelect = document.getElementById('new-category-select').value;
+            let finalCategory = catSelect;
+            if (catSelect === '__NEW__') {
+                finalCategory = document.getElementById('new-category-name').value.trim();
+            }
+
+            const eg1En = document.getElementById('new-eg1-en').value.trim();
+            const eg1Vi = document.getElementById('new-eg1-vi').value.trim();
+            const eg2En = document.getElementById('new-eg2-en').value.trim();
+            const eg2Vi = document.getElementById('new-eg2-vi').value.trim();
+
+            if (!wordVal || !viVal || !finalCategory) {
+                showToast("Vui lòng điền đầy đủ các thông tin bắt buộc!");
+                return;
+            }
+
+            const newId = vocabularyData.length > 0 
+                ? Math.max(...vocabularyData.map(item => item.id)) + 1 
+                : 1;
+
+            const newWordObj = {
+                id: newId,
+                category: finalCategory,
+                word: wordVal,
+                pos: posVal,
+                ipa: ipaVal,
+                vi: viVal,
+                eg1_en: eg1En || undefined,
+                eg1_vi: eg1Vi || undefined,
+                eg2_en: eg2En || undefined,
+                eg2_vi: eg2Vi || undefined
+            };
+
+            vocabularyData.push(newWordObj);
+            leitnerLevels[newId] = 1;
+            reviewHistory[newId] = Date.now();
+
+            await syncToSupabase();
+
+            // Reset Form and rebuild decks
+            document.getElementById('add-word-form').reset();
+            buildDeck();
+            showToast(`Đã thêm thành công từ: ${wordVal} vào "${finalCategory}"! 🎉`);
+            
+            // Go to the newly created deck in flashcard mode
+            currentCategory = finalCategory;
+            buildDeck();
+            currentIndex = currentDeck.findIndex(i => i.id === newId);
+            
+            document.getElementById('deck-selector-view').classList.add('hidden');
+            document.getElementById('flashcard-player-view').classList.remove('hidden');
+            switchMode('flashcard');
+        }
+
+        // NEW FEATURE: BULK IMPORT HANDLER (Xử lý nạp từ vựng hàng loạt tự động phân tách)
+        window.handleBulkImport = async function(event) {
+            if (event) event.preventDefault();
+
+            const deckNameVal = document.getElementById('bulk-deck-name').value.trim();
+            const bulkText = document.getElementById('bulk-import-area').value.trim();
+
+            if (!deckNameVal) {
+                showToast("Vui lòng nhập tên cho Bộ Từ Mới!");
+                document.getElementById('bulk-deck-name').focus();
+                return;
+            }
+
+            if (!bulkText) {
+                showToast("Vui lòng dán danh sách từ vựng vào khung văn bản!");
+                document.getElementById('bulk-import-area').focus();
+                return;
+            }
+
+            const lines = bulkText.split('\n');
+            let newlyAddedCount = 0;
+            let startingId = vocabularyData.length > 0 
+                ? Math.max(...vocabularyData.map(item => item.id)) + 1 
+                : 1;
+
+            lines.forEach(line => {
+                const cleanLine = line.trim();
+                // Bỏ qua dòng trống hoặc dòng chú thích
+                if (cleanLine === '' || cleanLine.startsWith('//') || cleanLine.startsWith('#')) return;
+
+                // Tách biệt các trường bằng dấu gạch đứng |
+                const parts = cleanLine.split('|').map(p => p.trim());
+                
+                // Trường bắt buộc tối thiểu: Từ tiếng Anh và Nghĩa tiếng Việt
+                const word = parts[0];
+                let ipa = parts[1] || "";
+                let vi = parts[2] || "";
+                let pos = parts[3] || "n"; // Mặc định là danh từ
+                let eg1_en = parts[4] || undefined;
+                let eg1_vi = parts[5] || undefined;
+
+                if (parts.length === 2) {
+                    vi = parts[1];
+                    ipa = "";
+                    pos = "n";
+                }
+
+                if (word && vi) {
+                    const newId = startingId++;
+                    const wordObj = {
+                        id: newId,
+                        category: deckNameVal,
+                        word: word,
+                        pos: pos,
+                        ipa: ipa,
+                        vi: vi,
+                        eg1_en: eg1_en,
+                        eg1_vi: eg1_vi
+                    };
+
+                    vocabularyData.push(wordObj);
+                    leitnerLevels[newId] = 1;
+                    reviewHistory[newId] = Date.now();
+                    newlyAddedCount++;
+                }
+            });
+
+            if (newlyAddedCount === 0) {
+                showToast("Không tìm thấy từ vựng nào hợp lệ! Hãy kiểm tra lại định dạng.");
+                return;
+            }
+
+            // Sync Database
+            await syncToSupabase();
+
+            // Làm sạch khung nhập dữ liệu hàng loạt
+            document.getElementById('bulk-deck-name').value = '';
+            document.getElementById('bulk-import-area').value = '';
+
+            // Đồng bộ hoá trạng thái ứng dụng và giao diện
+            currentCategory = deckNameVal;
+            buildDeck();
+            currentIndex = 0;
+            isFlipped = false;
+            cardFlipper.classList.remove('flipped');
+
+            renderDeckSelector();
+            updateTopCounters();
+
+            // Đưa người dùng về màn hình Flashcard bộ vừa tạo để học luôn
+            document.getElementById('deck-selector-view').classList.add('hidden');
+            document.getElementById('flashcard-player-view').classList.remove('hidden');
+            switchMode('flashcard');
+
+            showToast(`Tuyệt vời! Đã nạp bộ "${deckNameVal}" với ${newlyAddedCount} từ vựng! 🚀`);
+        }
+
+        // Export/Import JSON data tools
+        window.exportVocabularyJSON = function() {
+            const jsonText = JSON.stringify(vocabularyData, null, 2);
+            const ioArea = document.getElementById('json-io-area');
+            ioArea.value = jsonText;
+            ioArea.select();
+            
+            try {
+                document.execCommand('copy');
+                showToast("Đã sao chép toàn bộ dữ liệu JSON vào khay nhớ tạm!");
+            } catch (err) {
+                showToast("Không thể tự động sao chép, hãy copy thủ công ô văn bản!");
+            }
+        }
+
+        window.importVocabularyJSON = async function() {
+            const ioArea = document.getElementById('json-io-area');
+            const rawData = ioArea.value.trim();
+
+            if (!rawData) {
+                showToast("Vui lòng dán dữ liệu JSON hợp lệ vào ô trước!");
+                return;
+            }
+
+            try {
+                const parsed = JSON.parse(rawData);
+                if (Array.isArray(parsed)) {
+                    const isValid = parsed.every(item => item && Number.isSafeInteger(item.id) && item.id > 0
+                        && ['word', 'vi', 'category'].every(field => typeof item[field] === 'string' && item[field].trim())
+                        && ['pos', 'ipa', 'syn', 'eg1_en', 'eg1_vi', 'eg2_en', 'eg2_vi'].every(
+                            field => item[field] == null || typeof item[field] === 'string'
+                        )) && new Set(parsed.map(item => item.id)).size === parsed.length;
+                    if (!isValid) {
+                        showToast("Dữ liệu sai định dạng! Mỗi từ phải có: id, word, vi, category.");
+                        return;
+                    }
+
+                    vocabularyData = parsed;
+                    initLeitnerLevels();
+                    
+                    // Reset selected categories & filters to prevent visual glitches
+                    currentCategory = 'all';
+                    buildDeck();
+                    currentIndex = 0;
+                    isFlipped = false;
+                    cardFlipper.classList.remove('flipped');
+                    
+                    // Sync database to cloud
+                    await syncToSupabase();
+
+                    // Refresh both selectors & top statistical widgets immediately
+                    renderDeckSelector();
+                    updateTopCounters();
+                    
+                    // Reset to Selector View
+                    document.getElementById('flashcard-player-view').classList.add('hidden');
+                    document.getElementById('deck-selector-view').classList.remove('hidden');
+                    
+                    switchMode('flashcard');
+                    showToast(`Tải thành công ${parsed.length} từ vựng mới vào ứng dụng! 🚀`);
+                } else {
+                    showToast("Dữ liệu nhập vào phải là một mảng JSON!");
+                }
+            } catch (err) {
+                showToast("Lỗi phân tích cú pháp JSON! Vui lòng kiểm tra lại cấu trúc.");
+            }
+        }
+
+        // Custom Confirm Modal Logic (Universal confirmation box)
+        window.openConfirmModal = function(type, targetIdOrName) {
+            confirmActionType = type;
+            const modal = document.getElementById('confirm-modal');
+            const box = document.getElementById('confirm-modal-box');
+            const titleEl = document.getElementById('confirm-modal-title');
+            const descEl = document.getElementById('confirm-modal-desc');
+            const actionBtn = document.getElementById('confirm-modal-action-btn');
+
+            if (type === 'restore') {
+                titleEl.textContent = "Xác nhận đặt lại";
+                descEl.textContent = "Hành động này sẽ khôi phục bộ từ gốc (47 từ) và xóa toàn bộ các từ bạn tự thêm cũng như lịch trình của bạn. Bạn vẫn muốn tiếp tục?";
+                actionBtn.textContent = "Đồng ý thiết lập lại";
+                actionBtn.className = "flex-1 py-3 bg-rose-600 text-white rounded-xl hover:bg-rose-700 shadow-md shadow-rose-100 transition-colors";
+            } else if (type === 'deleteCard') {
+                pendingDeleteId = targetIdOrName;
+                const wordObj = vocabularyData.find(w => w.id === targetIdOrName);
+                titleEl.textContent = "Xóa từ vựng này?";
+                descEl.innerHTML = `Bạn có chắc chắn muốn xóa từ <strong>"${escapeHTML(wordObj?.word)}"</strong> khỏi kho từ vựng và lịch trình học không?`;
+                actionBtn.textContent = "Đồng ý xóa từ";
+                actionBtn.className = "flex-1 py-3 bg-rose-600 text-white rounded-xl hover:bg-rose-700 shadow-md shadow-rose-100 transition-colors";
+            } else if (type === 'deleteDeck') {
+                pendingDeleteDeckName = targetIdOrName;
+                titleEl.textContent = "Xóa toàn bộ bộ học?";
+                descEl.innerHTML = `Hành động này sẽ xóa vĩnh viễn bộ học <strong>"${escapeHTML(targetIdOrName)}"</strong> và tất cả các từ vựng thuộc nhóm này.`;
+                actionBtn.textContent = "Đồng ý xóa bộ";
+                actionBtn.className = "flex-1 py-3 bg-rose-600 text-white rounded-xl hover:bg-rose-700 shadow-md shadow-rose-100 transition-colors";
+            }
+
+            modal.classList.remove('opacity-0', 'pointer-events-none');
+            box.classList.remove('scale-90');
+            box.classList.add('scale-100');
+        }
+
+        window.closeConfirmModal = function() {
+            const modal = document.getElementById('confirm-modal');
+            const box = document.getElementById('confirm-modal-box');
+            modal.classList.add('opacity-0', 'pointer-events-none');
+            box.classList.remove('scale-100');
+            box.classList.add('scale-90');
+            
+            confirmActionType = null;
+            pendingDeleteId = null;
+            pendingDeleteDeckName = null;
+        }
+
+        // Handles click action inside confirmation modal
+        window.executeConfirmAction = async function() {
+            if (confirmActionType === 'restore') {
+                await executeRestoreDefaultVocab();
+            } else if (confirmActionType === 'deleteCard') {
+                await executeDeleteCard();
+            } else if (confirmActionType === 'deleteDeck') {
+                await executeDeleteDeck();
+            }
+            closeConfirmModal();
+        }
+
+        async function executeRestoreDefaultVocab() {
+            vocabularyData = [...defaultVocabulary];
+            starredIds.clear();
+            learntIds.clear();
+            leitnerLevels = {};
+            reviewHistory = {};
+            initLeitnerLevels();
+            
+            currentCategory = 'all';
+            buildDeck();
+            currentIndex = 0;
+            isFlipped = false;
+            cardFlipper.classList.remove('flipped');
+            
+            // Sync database reset
+            await syncToSupabase();
+
+            // Re-render everything immediately upon data restoration
+            renderDeckSelector();
+            updateTopCounters();
+            
+            // Back to Selector View
+            document.getElementById('flashcard-player-view').classList.add('hidden');
+            document.getElementById('deck-selector-view').classList.remove('hidden');
+            switchMode('flashcard');
+            showToast("Đã khôi phục thành công danh sách từ gốc!");
+        }
+
+        // Action to remove a specific card
+        window.handleQuickDeleteCard = function() {
+            if (currentDeck.length === 0) return;
+            const currentItem = currentDeck[currentIndex];
+            openConfirmModal('deleteCard', currentItem.id);
+        }
+
+        async function executeDeleteCard() {
+            if (pendingDeleteId === null) return;
+            
+            vocabularyData = vocabularyData.filter(item => item.id !== pendingDeleteId);
+            starredIds.delete(pendingDeleteId);
+            learntIds.delete(pendingDeleteId);
+            delete leitnerLevels[pendingDeleteId];
+            delete reviewHistory[pendingDeleteId];
+
+            showToast("Đã xóa từ vựng thành công!");
+
+            buildDeck();
+            
+            // Sync database update
+            await syncToSupabase();
+
+            // If the filtered deck became empty, return to selector
+            if (currentDeck.length === 0) {
+                backToDeckSelector();
+            } else {
+                if (currentIndex >= currentDeck.length) {
+                    currentIndex = currentDeck.length - 1;
+                }
+                isFlipped = false;
+                cardFlipper.classList.remove('flipped');
+                updateUI();
+            }
+            renderDeckSelector();
+        }
+
+        // Action to remove an entire category/deck
+        async function executeDeleteDeck() {
+            if (!pendingDeleteDeckName) return;
+            
+            const deletedWordIds = vocabularyData
+                .filter(item => item.category === pendingDeleteDeckName)
+                .map(item => item.id);
+
+            vocabularyData = vocabularyData.filter(item => item.category !== pendingDeleteDeckName);
+            
+            // Clean up related tracking metadata
+            deletedWordIds.forEach(id => {
+                starredIds.delete(id);
+                learntIds.delete(id);
+                delete leitnerLevels[id];
+                delete reviewHistory[id];
+            });
+
+            showToast(`Đã xóa toàn bộ bộ học "${pendingDeleteDeckName}"!`);
+            
+            // Sync changes to Cloud
+            await syncToSupabase();
+
+            // Reset to general category, rebuild decks, and render selectors
+            currentCategory = 'all';
+            buildDeck();
+            renderDeckSelector();
+            updateUI();
+        }
+
+        // Top Navigation statistics counter updater
+        function updateTopCounters() {
+            document.getElementById('star-count').textContent = starredIds.size;
+            const progressPercent = vocabularyData.length > 0 
+                ? Math.round((learntIds.size / vocabularyData.length) * 100) 
+                : 0;
+            document.getElementById('progress-percent').textContent = `${progressPercent}%`;
+        }
+
+        // ----------------- MODE 2: TRẮC NGHIỆM QUIZ LOGIC -----------------
+        window.startQuizMode = function() {
+            if (vocabularyData.length === 0) {
+                showToast("Bạn cần nạp từ vựng trước khi chơi trắc nghiệm!");
+                switchMode('flashcard');
+                return;
+            }
+            
+            const shuffledDeck = [...vocabularyData].sort(() => 0.5 - Math.random());
+            quizQuestions = shuffledDeck.slice(0, Math.min(10, shuffledDeck.length));
+            
+            quizCurrentIndex = 0;
+            quizCorrectAnswers = 0;
+            
+            document.getElementById('quiz-result-card').classList.add('hidden');
+            document.getElementById('quiz-options-container').parentElement.classList.remove('hidden');
+            
+            loadQuizQuestion();
+        }
+
+        function loadQuizQuestion() {
+            quizHasSelected = false;
+            document.getElementById('quiz-action-bar').classList.add('hidden');
+            
+            const questionItem = quizQuestions[quizCurrentIndex];
+            
+            // Set word detail
+            document.getElementById('quiz-question-word').textContent = questionItem.word;
+            document.getElementById('quiz-question-ipa').textContent = `${questionItem.pos || ''} • ${questionItem.ipa || ''}`;
+            
+            // Update quiz counters
+            document.getElementById('quiz-counter-text').textContent = `Câu ${quizCurrentIndex + 1} / ${quizQuestions.length}`;
+            document.getElementById('quiz-score-text').textContent = `Điểm: ${quizCorrectAnswers * 10}`;
+            document.getElementById('quiz-progress').style.width = `${((quizCurrentIndex + 1) / quizQuestions.length) * 100}%`;
+            document.getElementById('quiz-streak').textContent = quizStreak;
+
+            const correctOption = questionItem.vi;
+            
+            // Pick wrong alternatives
+            const wrongOptions = vocabularyData
+                .filter(item => item.word.toLowerCase() !== questionItem.word.toLowerCase())
+                .sort(() => 0.5 - Math.random())
+                .slice(0, 3)
+                .map(item => item.vi);
+                
+            const allOptions = [correctOption, ...wrongOptions].sort(() => 0.5 - Math.random());
+
+            // Render Options buttons
+            const container = document.getElementById('quiz-options-container');
+            container.innerHTML = '';
+            
+            allOptions.forEach((option, idx) => {
+                const btn = document.createElement('button');
+                btn.className = "w-full text-left p-4 rounded-2xl border-2 border-slate-200 hover:border-indigo-300 hover:bg-indigo-50/30 transition-all font-semibold flex items-center justify-between text-sm active:scale-[0.99] bg-white text-slate-800";
+                btn.innerHTML = `
+                    <span class="pr-2 leading-relaxed">${escapeHTML(option)}</span>
+                    <span class="w-6 h-6 shrink-0 border border-slate-300 rounded-full flex items-center justify-center text-xs text-slate-400 font-bold bg-slate-50">${idx + 1}</span>
+                `;
+                btn.onclick = () => selectQuizOption(btn, option, correctOption);
+                container.appendChild(btn);
+            });
+        }
+
+        function selectQuizOption(buttonEl, selectedVal, correctVal) {
+            if (quizHasSelected) return;
+            quizHasSelected = true;
+
+            const currentItem = quizQuestions[quizCurrentIndex];
+            const options = document.getElementById('quiz-options-container').querySelectorAll('button');
+            const feedbackText = document.getElementById('quiz-feedback');
+            
+            speak(currentItem.word);
+
+            options.forEach(btn => {
+                const optionSpan = btn.querySelector('span');
+                const badge = btn.querySelector('span:nth-child(2)');
+                
+                if (optionSpan.textContent === correctVal) {
+                    btn.className = "w-full text-left p-4 rounded-2xl border-2 border-emerald-500 bg-emerald-50 text-emerald-800 font-bold flex items-center justify-between text-sm";
+                    badge.innerHTML = `<i data-lucide="check" class="w-4 h-4 text-emerald-600"></i>`;
+                } else if (optionSpan.textContent === selectedVal) {
+                    btn.className = "w-full text-left p-4 rounded-2xl border-2 border-rose-500 bg-rose-50 text-rose-800 font-semibold flex items-center justify-between text-sm";
+                    badge.innerHTML = `<i data-lucide="x" class="w-4 h-4 text-rose-600"></i>`;
+                } else {
+                    btn.className = "w-full text-left p-4 rounded-2xl border border-slate-100 bg-slate-50/50 text-slate-400 flex items-center justify-between text-sm opacity-50";
+                }
+            });
+
+            if (selectedVal === correctVal) {
+                quizCorrectAnswers++;
+                quizStreak++;
+                feedbackText.innerHTML = `<span class="text-emerald-600 flex items-center animate-bounce"><i data-lucide="check-circle" class="w-4 h-4 mr-1"></i> Chính xác!</span>`;
+                promoteLeitner(currentItem.id);
+            } else {
+                quizStreak = 0;
+                feedbackText.innerHTML = `<span class="text-rose-600 flex items-center"><i data-lucide="alert-circle" class="w-4 h-4 mr-1"></i> Sai rồi!</span>`;
+                demoteLeitner(currentItem.id);
+            }
+
+            document.getElementById('quiz-action-bar').classList.remove('hidden');
+            lucide.createIcons();
+        }
+
+        window.nextQuizQuestion = function() {
+            quizCurrentIndex++;
+            if (quizCurrentIndex < quizQuestions.length) {
+                loadQuizQuestion();
+            } else {
+                showQuizResult();
+            }
+        }
+
+        function showQuizResult() {
+            document.getElementById('quiz-options-container').parentElement.classList.add('hidden');
+            
+            const resultCard = document.getElementById('quiz-result-card');
+            resultCard.classList.remove('hidden');
+            
+            document.getElementById('result-score').textContent = `${quizCorrectAnswers}/${quizQuestions.length}`;
+            document.getElementById('result-streak').textContent = quizStreak;
+            
+            if (quizCorrectAnswers === quizQuestions.length) {
+                showToast("Thành tích xuất sắc! 🎉");
+            }
+        }
+
+
+        // ----------------- MODE 3: LUYỆN VIẾT TỪ (TYPING CHALLENGE) -----------------
+        window.startTypingMode = function() {
+            if (vocabularyData.length === 0) {
+                showToast("Vui lòng thêm từ vựng trước khi luyện tập chế độ viết!");
+                switchMode('flashcard');
+                return;
+            }
+            const candidates = [...vocabularyData].sort(() => 0.5 - Math.random());
+            typingCurrentItem = candidates[0];
+            typingHintIndex = 0;
+
+            document.getElementById('typing-meaning').textContent = typingCurrentItem.vi;
+            document.getElementById('typing-pos-ipa').textContent = `(${typingCurrentItem.pos || ''}) • ${typingCurrentItem.ipa || ''}`;
+
+            const word = typingCurrentItem.word;
+            const escapedWord = word.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+            const regex = new RegExp(`\\b${escapedWord}\\b`, 'gi');
+            
+            const sentenceToMask = typingCurrentItem.eg1_en || "Please translate: " + typingCurrentItem.word;
+            const maskedSentence = sentenceToMask.split(regex).map(escapeHTML).join(`<span class="px-2 py-0.5 bg-yellow-100 border border-yellow-200 text-yellow-800 rounded font-bold font-mono">______</span>`);
+            
+            document.getElementById('typing-example-en').innerHTML = maskedSentence;
+            document.getElementById('typing-example-vi').textContent = typingCurrentItem.eg1_vi || '';
+
+            const input = document.getElementById('typing-input');
+            input.value = '';
+            input.className = "w-full px-4 py-3 border border-slate-200 rounded-xl text-base focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 shadow-inner-sm text-center font-bold tracking-wide bg-white text-slate-900";
+            input.disabled = false;
+            
+            document.getElementById('typing-hint-count').textContent = `0`;
+            document.getElementById('typing-feedback-box').classList.add('hidden');
+            document.getElementById('typing-next-btn').classList.add('hidden');
+        }
+
+        window.showTypingHint = function() {
+            if (!typingCurrentItem) return;
+            const word = typingCurrentItem.word;
+            
+            typingHintIndex++;
+            if (typingHintIndex > word.length) {
+                typingHintIndex = word.length;
+            }
+
+            const visiblePart = word.substring(0, typingHintIndex);
+            const hiddenPart = "_".repeat(word.length - typingHintIndex);
+            
+            document.getElementById('typing-hint-count').textContent = `${typingHintIndex}/${word.length}`;
+            showToast(`Gợi ý chữ cái đầu: ${visiblePart}${hiddenPart}`);
+        }
+
+        window.checkTypingAnswer = function() {
+            if (!typingCurrentItem) return;
+            
+            const userInput = document.getElementById('typing-input').value.trim().toLowerCase();
+            const correctWord = typingCurrentItem.word.toLowerCase();
+            const feedbackBox = document.getElementById('typing-feedback-box');
+            const inputField = document.getElementById('typing-input');
+
+            speak(typingCurrentItem.word);
+
+            feedbackBox.classList.remove('hidden');
+            inputField.disabled = true;
+
+            if (userInput === correctWord) {
+                feedbackBox.className = "mt-4 p-3 rounded-xl text-center text-sm font-bold bg-emerald-50 text-emerald-800 border border-emerald-100";
+                feedbackBox.textContent = `Chính xác! Đáp án đúng là: ${typingCurrentItem.word}`;
+                promoteLeitner(typingCurrentItem.id);
+            } else {
+                feedbackBox.className = "mt-4 p-3 rounded-xl text-center text-sm font-bold bg-rose-50 text-rose-800 border border-rose-100";
+                feedbackBox.textContent = `Sai mất rồi! Đáp án đúng là: ${typingCurrentItem.word}`;
+                demoteLeitner(typingCurrentItem.id);
+            }
+
+            document.getElementById('typing-next-btn').classList.remove('hidden');
+        }
+
+        window.checkTypingEnter = function(event) {
+            if (event.key === 'Enter') {
+                const nextBtn = document.getElementById('typing-next-btn');
+                if (nextBtn.classList.contains('hidden')) {
+                    checkTypingAnswer();
+                } else {
+                    nextTypingQuestion();
+                }
+            }
+        }
+
+        window.nextTypingQuestion = function() {
+            startTypingMode();
+        }
+
+
+        // ----------------- MODE 4: SPACED REPETITION SCHEDULER DASHBOARD -----------------
+        window.renderScheduleDashboard = function() {
+            let boxCounts = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+            vocabularyData.forEach(item => {
+                const lvl = leitnerLevels[item.id] || 1;
+                boxCounts[lvl]++;
+            });
+
+            document.getElementById('leitner-count-1').textContent = boxCounts[1];
+            document.getElementById('leitner-count-2').textContent = boxCounts[2];
+            document.getElementById('leitner-count-3').textContent = boxCounts[3];
+            document.getElementById('leitner-count-4').textContent = boxCounts[4];
+            document.getElementById('leitner-count-5').textContent = boxCounts[5];
+
+            const now = Date.now();
+            let dueList = [];
+
+            vocabularyData.forEach(item => {
+                const lvl = leitnerLevels[item.id] || 1;
+                const lastReviewed = reviewHistory[item.id] || 0;
+                const timePassedMs = now - lastReviewed;
+                const daysPassed = timePassedMs / (1000 * 60 * 60 * 24);
+
+                let isDue = false;
+                if (lvl === 1) isDue = true; 
+                else if (lvl === 2 && daysPassed >= 2) isDue = true;
+                else if (lvl === 3 && daysPassed >= 4) isDue = true;
+                else if (lvl === 4 && daysPassed >= 7) isDue = true;
+                else if (lvl === 5 && daysPassed >= 15) isDue = true;
+
+                if (isDue) {
+                    dueList.push({ ...item, box: lvl, daysPassed: Math.floor(daysPassed) });
+                }
+            });
+
+            const scheduledContainer = document.getElementById('scheduled-word-box');
+            scheduledContainer.innerHTML = '';
+
+            if (dueList.length === 0) {
+                scheduledContainer.innerHTML = `
+                    <div class="text-center py-6 text-slate-400 bg-slate-50 rounded-2xl border border-dashed border-slate-200">
+                        <p class="text-sm font-semibold text-emerald-600 px-2">🎉 Tuyệt vời! Bạn đã hoàn thành tất cả từ vựng cần ôn hôm nay.</p>
+                        <p class="text-[11px] mt-1">Hãy làm thêm trắc nghiệm hoặc quay lại vào ngày mai!</p>
+                    </div>
+                `;
+                return;
+            }
+
+            dueList.forEach(item => {
+                const el = document.createElement('div');
+                el.className = "flex items-center justify-between p-3 bg-slate-50 rounded-2xl border border-slate-100 hover:bg-slate-100/50 transition-colors";
+                
+                let boxBadgeColor = "bg-red-100 text-red-800 border-red-200";
+                if (item.box === 2) boxBadgeColor = "bg-orange-100 text-orange-800 border-orange-200";
+                if (item.box === 3) boxBadgeColor = "bg-yellow-100 text-yellow-800 border-yellow-200";
+                if (item.box === 4) boxBadgeColor = "bg-indigo-100 text-indigo-800 border-indigo-200";
+                if (item.box === 5) boxBadgeColor = "bg-emerald-100 text-emerald-800 border-emerald-200";
+
+                el.innerHTML = `
+                    <div class="overflow-hidden mr-2">
+                        <span class="text-sm font-bold text-slate-900 block sm:inline">${escapeHTML(item.word)}</span>
+                        <span class="text-xs text-slate-400 block sm:inline sm:ml-1.5 truncate">${escapeHTML(item.vi)}</span>
+                    </div>
+                    <div class="flex items-center space-x-1.5 shrink-0">
+                        <span class="text-[10px] px-2 py-0.5 rounded-full border font-bold ${boxBadgeColor}">Hộp ${item.box}</span>
+                        <button onclick="startReviewFromSchedule(${Number(item.id)})" class="p-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-colors flex items-center justify-center" title="Ôn tập từ này">
+                            <i data-lucide="eye" class="w-3.5 h-3.5"></i>
+                        </button>
+                    </div>
+                `;
+                scheduledContainer.appendChild(el);
+            });
+
+            lucide.createIcons();
+        }
+
+        window.startReviewFromSchedule = function(id) {
+            const idx = vocabularyData.findIndex(item => item.id === id);
+            if (idx !== -1) {
+                const matchedItem = vocabularyData[idx];
+                currentCategory = matchedItem.category;
+                buildDeck();
+                currentIndex = currentDeck.findIndex(item => item.id === id);
+                
+                document.getElementById('deck-selector-view').classList.add('hidden');
+                document.getElementById('flashcard-player-view').classList.remove('hidden');
+                switchMode('flashcard');
+            }
+        }
+
+
+        // ----------------- OTHER SYSTEM UTILITIES -----------------
+        let touchStartX = 0;
+        let touchEndX = 0;
+
+        function setupTouchGestures() {
+            const cardElement = document.getElementById('card-container');
+            if (!cardElement) return;
+
+            cardElement.addEventListener('touchstart', (e) => {
+                touchStartX = e.changedTouches[0].screenX;
+            }, { passive: true });
+
+            cardElement.addEventListener('touchend', (e) => {
+                touchEndX = e.changedTouches[0].screenX;
+                handleSwipeGesture();
+            }, { passive: true });
+        }
+
+        function handleSwipeGesture() {
+            const swipeThreshold = 50; 
+            if (touchStartX - touchEndX > swipeThreshold) {
+                nextCard();
+            } else if (touchEndX - touchStartX > swipeThreshold) {
+                prevCard();
+            }
+        }
+
+        function setupKeyboardNav() {
+            document.addEventListener('keydown', (e) => {
+                if (!currentUser || document.activeElement?.closest('button, a') || document.activeElement === document.getElementById('search-input') || 
+                    document.activeElement === document.getElementById('typing-input') ||
+                    document.activeElement === document.getElementById('bulk-deck-name') ||
+                    document.activeElement === document.getElementById('bulk-import-area') ||
+                    document.activeElement.tagName === 'INPUT' ||
+                    document.activeElement.tagName === 'TEXTAREA' ||
+                    document.activeElement.tagName === 'SELECT') {
+                    return;
+                }
+
+                if (e.code === 'Space') {
+                    e.preventDefault();
+                    if (currentMode === 'flashcard') flipCard();
+                } else if (e.code === 'ArrowLeft') {
+                    if (currentMode === 'flashcard') prevCard();
+                } else if (e.code === 'ArrowRight') {
+                    if (currentMode === 'flashcard') nextCard();
+                } else if (e.code === 'KeyS') {
+                    if (currentMode === 'flashcard') speakWord(e);
+                } else if (e.code === 'KeyF') {
+                    if (currentMode === 'flashcard') toggleStar(e);
+                }
+            });
+        }
+
+        let toastTimeout;
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            const toastMessage = document.getElementById('toast-message');
+            
+            toastMessage.textContent = message;
+            
+            toast.classList.remove('opacity-0', 'translate-y-20', 'pointer-events-none');
+            toast.classList.add('opacity-100', 'translate-y-0');
+            
+            clearTimeout(toastTimeout);
+            toastTimeout = setTimeout(() => {
+                toast.classList.add('opacity-0', 'translate-y-20', 'pointer-events-none');
+                toast.classList.remove('opacity-100', 'translate-y-0');
+            }, 2500);
+        }
+    </script>
+</body>
+</html>
