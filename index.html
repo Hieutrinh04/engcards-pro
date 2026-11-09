@@ -130,7 +130,14 @@
                 <div class="flex flex-wrap gap-2">
                     <button type="submit" value="signin" class="rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white">Đăng nhập</button>
                     <button type="submit" value="signup" class="rounded-xl border border-indigo-200 px-4 py-2 text-sm font-semibold text-indigo-700">Đăng ký</button>
+                    <button type="submit" value="recover" formnovalidate class="px-2 py-2 text-sm font-semibold text-indigo-700 underline">Quên mật khẩu</button>
                 </div>
+            </form>
+            <form id="cloud-reset-form" method="post" class="hidden space-y-3">
+                <label class="block text-sm font-semibold">Mật khẩu mới
+                    <input name="password" type="password" autocomplete="new-password" required minlength="8" class="mt-1 block w-full rounded-xl border border-slate-300 p-2">
+                </label>
+                <button type="submit" class="rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white">Lưu mật khẩu mới</button>
             </form>
             <button type="button" id="cloud-retry-load" class="hidden rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white">Thử kết nối lại</button>
             <noscript>Bật JavaScript để sử dụng EngCards Pro.</noscript>
@@ -723,6 +730,7 @@
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.119.0/dist/umd/supabase.js"></script>
     <script type="module">
+        const authLink = new URLSearchParams(location.hash.slice(1));
         const db = window.supabase?.createClient(
             'https://krzzgdhxzcdacnirwgao.supabase.co',
             "sb_publishable_hCV3zU4F-tQc2UYMx7MdXA_4cdGmFAU",
@@ -849,6 +857,7 @@
         }
 
         const authForm = document.getElementById('cloud-auth-form');
+        const resetForm = document.getElementById('cloud-reset-form');
         const authMessage = document.getElementById('cloud-auth-message');
         const retryLoad = document.getElementById('cloud-retry-load');
         const retrySave = document.getElementById('cloud-retry-save');
@@ -930,13 +939,15 @@
 
         function authError(error) {
             switch (error?.code) {
-                case 'invalid_credentials': return 'Email hoặc mật khẩu không đúng.';
+                case 'invalid_credentials': return 'Email hoặc mật khẩu không đúng. Nếu quên mật khẩu, hãy bấm Quên mật khẩu.';
                 case 'email_not_confirmed': return 'Hãy xác nhận email rồi đăng nhập lại.';
-                case 'user_already_exists': return 'Email này đã có tài khoản. Hãy bấm Đăng nhập.';
+                case 'email_exists':
+                case 'user_already_exists': return 'Email này đã có tài khoản. Hãy đăng nhập hoặc bấm Quên mật khẩu.';
                 case 'over_email_send_rate_limit':
                 case 'over_request_rate_limit': return 'Đã gửi quá nhiều yêu cầu. Hãy thử lại sau.';
                 case 'email_address_not_authorized': return 'Dịch vụ gửi email chưa hỗ trợ địa chỉ này.';
                 case 'weak_password': return 'Mật khẩu chưa đủ mạnh.';
+                case 'same_password': return 'Hãy chọn mật khẩu khác mật khẩu hiện tại.';
                 default: return 'Không thể xử lý yêu cầu. Hãy kiểm tra thông tin và thử lại.';
             }
         }
@@ -947,13 +958,28 @@
             try {
                 if (!db) throw new Error('Supabase SDK unavailable');
                 const { data: { session }, error } = await db.auth.getSession();
-                if (error && !session && !location.hash.includes('error=')) throw error;
+                const recoveryToken = authLink.get('type') === 'recovery' && authLink.get('access_token');
+                const invalidLink = authLink.has('error') || authLink.has('error_code')
+                    || (recoveryToken && recoveryToken !== session?.access_token);
+                if (error && !session && !invalidLink) throw error;
+                if (recoveryToken && !invalidLink) {
+                    authForm.classList.add('hidden');
+                    resetForm.classList.remove('hidden');
+                    authMessage.textContent = 'Nhập mật khẩu mới có ít nhất 8 ký tự.';
+                    return;
+                }
+                if (invalidLink) {
+                    history.replaceState(null, '', pageUrl);
+                    for (const key of [...authLink.keys()]) authLink.delete(key);
+                    authMessage.textContent = 'Liên kết không hợp lệ hoặc đã hết hạn. Hãy bấm Quên mật khẩu để gửi lại.';
+                    authForm.classList.remove('hidden');
+                    updateSyncUI('Chưa đăng nhập', 'sync');
+                    return;
+                }
                 if (session) {
                     await loadAccount(session.user);
                 } else {
-                    authMessage.textContent = location.hash.includes('error=')
-                        ? 'Liên kết xác nhận không hợp lệ hoặc đã hết hạn. Hãy thử đăng ký lại.'
-                        : 'Đăng nhập để lưu từ vựng và tiến độ trên các thiết bị.';
+                    authMessage.textContent = 'Đăng nhập để lưu từ vựng và tiến độ trên các thiết bị.';
                     authForm.classList.remove('hidden');
                     updateSyncUI('Chưa đăng nhập', 'sync');
                 }
@@ -992,7 +1018,9 @@
             event.preventDefault();
             const form = new FormData(authForm);
             const credentials = { email: form.get('email').trim(), password: form.get('password') };
-            const signUp = event.submitter?.value === 'signup';
+            const action = event.submitter?.value;
+            const signUp = action === 'signup';
+            if (action === 'recover' && !authForm.elements.email.reportValidity()) return;
             if (signUp && credentials.password.length < 8) {
                 authMessage.textContent = 'Dùng mật khẩu ít nhất 8 ký tự.';
                 return;
@@ -1001,6 +1029,12 @@
             buttons.forEach(button => { button.disabled = true; });
             try {
                 authMessage.textContent = 'Đang xử lý…';
+                if (action === 'recover') {
+                    const { error } = await db.auth.resetPasswordForEmail(credentials.email, { redirectTo: pageUrl });
+                    if (error) throw error;
+                    authMessage.textContent = 'Nếu email đã có tài khoản, hãy kiểm tra hộp thư để mở liên kết đặt lại mật khẩu.';
+                    return;
+                }
                 const { data, error } = signUp
                     ? await db.auth.signUp({ ...credentials, options: { emailRedirectTo: pageUrl } })
                     : await db.auth.signInWithPassword(credentials);
@@ -1015,6 +1049,22 @@
                 authMessage.textContent = authError(error);
             } finally {
                 buttons.forEach(button => { button.disabled = false; });
+            }
+        });
+
+        resetForm.addEventListener('submit', async event => {
+            event.preventDefault();
+            const button = resetForm.querySelector('button');
+            button.disabled = true;
+            try {
+                const password = new FormData(resetForm).get('password');
+                const { error } = await db.auth.updateUser({ password });
+                if (error) throw error;
+                location.replace(pageUrl);
+            } catch (error) {
+                authMessage.textContent = authError(error);
+            } finally {
+                button.disabled = false;
             }
         });
 
